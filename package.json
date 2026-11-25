@@ -5,16 +5,17 @@
   "description": "Plataforma estilo Linktree: perfiles con enlaces a redes sociales y temas visuales (gamer, empresa, tienda...).",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
-    "db:push": "prisma db push",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate dev"
   },
   "dependencies": {
     "@prisma/client": "5.22.0",
     "bcryptjs": "2.4.3",
     "jose": "5.9.6",
     "next": "14.2.15",
+    "qrcode": "^1.5.4",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "simple-icons": "13.15.0",
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@types/bcryptjs": "2.4.6",
     "@types/node": "22.9.0",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "18.3.12",
     "prisma": "5.22.0",
     "typescript": "5.6.3"

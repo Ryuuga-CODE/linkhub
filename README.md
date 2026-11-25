@@ -11,20 +11,40 @@ Plataforma estilo *link-in-bio*: cada persona se registra, elige un nombre de us
 - **Panel** para editar perfil, añadir/ocultar/eliminar/reordenar enlaces, con vista previa en vivo tipo móvil.
 - **Contador de clics** por enlace (los botones públicos pasan por `/go/<id>`).
 
+## Cómo funciona
+
+1. Una persona entra al sitio y se **registra** eligiendo su usuario (p. ej. `tiendaluna`).
+2. En su **panel** añade enlaces (TikTok, YouTube, Amazon…), escribe su bio y elige un estilo.
+3. Arriba del panel ve **su enlace personal** — `https://tu-dominio.com/tiendaluna` — con botones para copiarlo, compartirlo por WhatsApp/X y un **código QR**.
+4. Pega ese enlace en la bio de sus redes. Cualquiera que lo abra ve su página, sin necesidad de cuenta.
+5. Cada clic pasa por `/go/<id>`, que suma el clic y redirige a la red social.
+
 ## Stack
 
 - [Next.js 14](https://nextjs.org) (App Router, Server Actions) + TypeScript
-- [Prisma](https://www.prisma.io) con SQLite (fácil de cambiar a PostgreSQL)
-- `zod` para validación, `jose` para sesiones, `bcryptjs` para contraseñas
+- [Prisma](https://www.prisma.io) con PostgreSQL
+- `zod` para validación, `jose` para sesiones, `bcryptjs` para contraseñas, `qrcode` para el QR
 
-## Puesta en marcha
+## Desarrollo local
 
 ```bash
 npm install
-cp .env.example .env   # y cambia AUTH_SECRET
-npm run db:push        # crea la base de datos SQLite
-npm run dev            # http://localhost:3000
+cp .env.example .env     # cambia AUTH_SECRET
+docker compose up -d     # PostgreSQL local
+npx prisma migrate deploy
+npm run dev              # http://localhost:3000
 ```
+
+## Publicar en internet (Vercel + Neon, gratis)
+
+1. Entra en [vercel.com](https://vercel.com) con tu cuenta de GitHub → **Add New… → Project** → importa este repositorio.
+2. Antes de pulsar *Deploy*, en **Environment Variables** añade `AUTH_SECRET` con un valor largo y aleatorio.
+3. Pulsa **Deploy** (el primer intento fallará por falta de base de datos; es normal).
+4. En el proyecto: **Storage → Create Database → Neon (Postgres)** → conéctala al proyecto. Esto crea `DATABASE_URL` y `DATABASE_URL_UNPOOLED` automáticamente.
+5. **Deployments → ⋯ → Redeploy**. El build aplica las migraciones y el sitio queda en `https://<proyecto>.vercel.app`.
+6. (Opcional) **Settings → Domains** para usar tu propio dominio. Los enlaces de los usuarios usan el dominio con el que se abre el sitio; para fijarlo, define `NEXT_PUBLIC_SITE_URL`.
+
+Cada usuario tendrá su enlace en `https://<tu-dominio>/<usuario>`.
 
 ## Estructura
 
@@ -37,12 +57,12 @@ app/
   go/[id]/route.ts       Redirección con conteo de clics
   actions.ts             Server Actions (registro, login, CRUD de enlaces)
   globals.css            Estilos de la app y de los temas (.theme-*)
-components/              ProfileView, PlatformIcon
+components/              ProfileView, PlatformIcon, ShareButtons
 lib/
   platforms.ts           Catálogo de plataformas (añade aquí nuevas redes)
   themes.ts              Catálogo de temas (y su CSS en globals.css)
   auth.ts, db.ts, validation.ts
-prisma/schema.prisma     Modelos User y Link
+prisma/schema.prisma     Modelos User y Link (+ migrations/)
 ```
 
 ### Añadir una plataforma
@@ -50,7 +70,3 @@ Agrega una línea en `lib/platforms.ts` con el id, nombre, clave de simple-icons
 
 ### Añadir un tema
 Agrega una entrada en `lib/themes.ts` y un bloque `.theme-<id>` en `app/globals.css` sobrescribiendo las variables `--p-*`.
-
-## Producción
-
-Para desplegar (Vercel, Railway, etc.) cambia `provider = "postgresql"` en `prisma/schema.prisma`, configura `DATABASE_URL` y un `AUTH_SECRET` largo y aleatorio.

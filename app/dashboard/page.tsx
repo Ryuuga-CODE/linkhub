@@ -6,6 +6,9 @@ import { PLATFORMS, getPlatform } from "@/lib/platforms";
 import { THEMES } from "@/lib/themes";
 import { PlatformIcon } from "@/components/PlatformIcon";
 import { ProfileView } from "@/components/ProfileView";
+import { ShareButtons } from "@/components/ShareButtons";
+import { siteUrl } from "@/lib/site";
+import QRCode from "qrcode";
 import { addLink, deleteLink, logout, moveLink, toggleLink, updateProfile } from "../actions";
 
 export default async function Dashboard({ searchParams }: { searchParams: { error?: string; ok?: string } }) {
@@ -13,6 +16,8 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
   if (!user) redirect("/login");
   const links = await db.link.findMany({ where: { userId: user.id }, orderBy: { position: "asc" } });
   const totalClicks = links.reduce((s, l) => s + l.clicks, 0);
+  const publicUrl = `${siteUrl()}/${user.username}`;
+  const qrSvg = await QRCode.toString(publicUrl, { type: "svg", margin: 1, width: 132 });
 
   return (
     <main className="dash">
@@ -29,6 +34,16 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
 
       <div className="dash-grid">
         <div className="dash-main">
+          <section className="card share-card">
+            <div className="share-info">
+              <h2>Tu enlace para compartir</h2>
+              <p className="muted">Ponlo en tu bio de TikTok, Instagram, YouTube o Twitch. Quien lo abra verá tu página.</p>
+              <a className="share-url" href={publicUrl} target="_blank" rel="noopener noreferrer">{publicUrl}</a>
+              <ShareButtons url={publicUrl} title={`${user.displayName} | LinkHub`} />
+            </div>
+            <div className="share-qr" dangerouslySetInnerHTML={{ __html: qrSvg }} aria-label="Código QR de tu página" />
+          </section>
+
           <section className="card">
             <h2>Perfil</h2>
             <form action={updateProfile} className="stack">
@@ -91,7 +106,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
           <div className="phone">
             <ProfileView user={user} links={links.filter((l) => l.active)} preview />
           </div>
-          <p className="muted center">linkhub/{user.username}</p>
+          <p className="muted center">{publicUrl.replace(/^https?:\/\//, "")}</p>
         </aside>
       </div>
     </main>

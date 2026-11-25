@@ -53,6 +53,14 @@ legend { font-size: .9rem; font-weight: 600; margin-bottom: .5rem; }
 .prefix-input input { border: 0; padding-left: .2rem; }
 
 /* Dashboard */
+.share-card { display: flex; gap: 1.25rem; align-items: center; justify-content: space-between; background: linear-gradient(135deg, #f5f3ff, #fff); border-color: #ddd6fe; }
+.share-info { display: grid; gap: .6rem; min-width: 0; }
+.share-info h2, .share-info p { margin: 0; }
+.share-url { font-weight: 700; font-size: 1.1rem; color: var(--accent); word-break: break-all; }
+.share-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.share-actions .btn { padding: .5rem 1rem; font-size: .9rem; }
+.share-qr { flex: none; background: #fff; border-radius: 12px; padding: 6px; border: 1px solid var(--line); line-height: 0; }
+@media (max-width: 600px) { .share-card { flex-direction: column; align-items: stretch; } .share-qr { align-self: center; } }
 .dash { padding-bottom: 3rem; }
 .dash > .alert { max-width: 1200px; margin: 0 auto 1rem; }
 .dash-grid { max-width: 1200px; margin: 0 auto; padding: 0 1.25rem; display: grid; grid-template-columns: 1fr 360px; gap: 1.5rem; align-items: start; }

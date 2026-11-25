@@ -15,7 +15,16 @@ async function load(username: string) {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const user = await load(params.username);
   if (!user) return { title: "Perfil no encontrado" };
-  return { title: `${user.displayName} (@${user.username}) | LinkHub`, description: user.bio || undefined };
+  const title = `${user.displayName} (@${user.username}) | LinkHub`;
+  const description = user.bio || `Todos los enlaces de ${user.displayName} en un solo lugar.`;
+  const images = user.avatarUrl ? [{ url: user.avatarUrl }] : undefined;
+  // Vista previa al compartir el enlace en WhatsApp, X, Discord, etc.
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "profile", images },
+    twitter: { card: "summary", title, description, images },
+  };
 }
 
 export default async function PublicProfile({ params }: Params) {
