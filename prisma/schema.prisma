@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  bio          String   @default("")
+  avatarUrl    String   @default("")
+  theme        String   @default("creador")
+  createdAt    DateTime @default(now())
+  links        Link[]
+}
+
+model Link {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform  String
+  title     String
+  url       String
+  position  Int      @default(0)
+  active    Boolean  @default(true)
+  clicks    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId, position])
+}
