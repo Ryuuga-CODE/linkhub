@@ -2,7 +2,10 @@ import { PlatformIcon } from "./PlatformIcon";
 import { getPlatform } from "@/lib/platforms";
 import { fontHref, profileStyle, type CustomStyle } from "@/lib/customStyle";
 import { headers } from "next/headers";
-import { channelSlug, spotifyEmbed, youtubeVideoId } from "@/lib/embeds";
+import { channelSlug, spotifyEmbed, youtubeVideos } from "@/lib/embeds";
+import { MediaCarousel } from "./MediaCarousel";
+import { MediaPlayer } from "./MediaPlayer";
+import { offlineContent, type MediaItem } from "@/lib/streams";
 import { liveChannels } from "@/lib/live";
 import { adSlotFor } from "@/lib/ads";
 import { AdSlot } from "./AdSlot";
@@ -41,6 +44,7 @@ export async function ProfileView({ user, links, preview }: Props) {
       {font && <link rel="stylesheet" href={font} />}
       {user.bannerUrl && <div className="banner" style={{ backgroundImage: `url("${user.bannerUrl}")` }} aria-hidden />}
       <div className="profile-inner">
+        <div className="profile-side">
         {user.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img className="avatar" src={user.avatarUrl} alt={user.displayName} />
@@ -82,7 +86,10 @@ export async function ProfileView({ user, links, preview }: Props) {
             })}
           </ul>
         )}
+        <div className="contact-desktop"><ContactCard user={user} preview={preview} /></div>
+        </div>
 
+        <div className="profile-main">
         <ul className="links">
           {buttons.map((l) => {
             const p = getPlatform(l.platform);
@@ -90,7 +97,7 @@ export async function ProfileView({ user, links, preview }: Props) {
             if (l.kind === "embed") {
               return (
                 <li key={l.id}>
-                  <Embed link={l} live={isLive(l)} />
+                  <Embed link={l} live={isLive(l)} preview={preview} />
                 </li>
               );
             }
@@ -132,8 +139,10 @@ export async function ProfileView({ user, links, preview }: Props) {
           })}
           {buttons.length === 0 && icons.length === 0 && <li className="empty">Todavía no hay enlaces.</li>}
         </ul>
-        <ContactCard user={user} preview={preview} />
+        <div className="contact-mobile"><ContactCard user={user} preview={preview} /></div>
         {ad && <AdSlot {...ad} className="ad-profile" />}
+        </div>
+
         <footer className="brandmark">
           Hecho con <a href="/">LinkHub</a>
           {!preview && <> · <a href={`/${user.username}/reportar`} rel="nofollow">Reportar</a> · <a href="/privacidad">Privacidad</a></>}
@@ -171,7 +180,7 @@ function ContactCard({ user, preview }: { user: Partial<Contact> & { username: s
 }
 
 /** Reproductor incrustado; si no se puede, cae a un botón normal. */
-async function Embed({ link, live }: { link: { platform: string; url: string; title: string }; live: boolean }) {
+async function Embed({ link, live, preview }: { link: { platform: string; url: string; title: string }; live: boolean; preview?: boolean }) {
   const title = (
     <p className="embed-title">
       <PlatformIcon platform={link.platform} size={16} /> {link.title}
@@ -179,10 +188,25 @@ async function Embed({ link, live }: { link: { platform: string; url: string; ti
     </p>
   );
   if (link.platform === "youtube") {
-    const id = await youtubeVideoId(link.url);
-    if (id) return (
+    const yt = await youtubeVideos(link.url);
+    if (yt?.videos) {
+      const ago = (iso: string) => {
+        const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+        return d < 1 ? "hoy" : d < 30 ? `hace ${d} ${d === 1 ? "día" : "días"}` : d < 365 ? `hace ${Math.floor(d / 30)} ${Math.floor(d / 30) === 1 ? "mes" : "meses"}` : `hace ${Math.floor(d / 365)} ${Math.floor(d / 365) === 1 ? "año" : "años"}`;
+      };
+      const items: MediaItem[] = yt.videos.map((v) => ({
+        id: v.id, title: v.title, thumb: `https://i.ytimg.com/vi/${v.id}/mqdefault.jpg`, player: "iframe",
+        src: `https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1`, meta: ago(v.published), href: `https://www.youtube.com/watch?v=${v.id}`,
+      }));
+      return (
+        <div className="embed embed-wide">{title}
+          <MediaCarousel items={items} more={yt.channelUrl ? { href: yt.channelUrl, label: "Ver todo el canal" } : undefined} />
+        </div>
+      );
+    }
+    if (yt?.single) return (
       <div className="embed">{title}
-        <iframe className="embed-video" src={`https://www.youtube-nocookie.com/embed/${id}`} title={link.title} loading="lazy"
+        <iframe className="embed-video" src={`https://www.youtube-nocookie.com/embed/${yt.single}`} title={link.title} loading="lazy"
           allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen />
       </div>
     );
@@ -196,17 +220,45 @@ async function Embed({ link, live }: { link: { platform: string; url: string; ti
     );
   }
   const slug = channelSlug(link.url);
+  const host = (headers().get("x-forwarded-host") ?? headers().get("host") ?? "localhost").split(":")[0];
+  if ((link.platform === "twitch" || link.platform === "kick") && slug && !live) {
+    const off = await offlineContent(link.platform, slug, host);
+    if (off) {
+      const channel = link.platform === "kick" ? `https://kick.com/${slug}` : `https://www.twitch.tv/${slug}`;
+      return (
+        <div className="embed embed-wide embed-offline">{title}
+          {off.lastStream && (
+            <section className="offline-block">
+              <p className="offline-label"><span className="offline-dot" aria-hidden /> Sin directo ahora · <strong>Último directo</strong></p>
+              <MediaPlayer item={off.lastStream} large />
+              <a className="car-title" href={off.lastStream.href} target="_blank" rel="noopener noreferrer">{off.lastStream.title}</a>
+              <p className="car-meta">{off.lastStream.meta}</p>
+            </section>
+          )}
+          {off.clips.length > 0 && (
+            <section className="offline-block">
+              <p className="offline-label">🎬 <strong>Clips destacados</strong></p>
+              <MediaCarousel items={off.clips} more={{ href: `${channel}/clips`, label: "Ver más clips" }} />
+            </section>
+          )}
+        </div>
+      );
+    }
+  }
   if (link.platform === "twitch" && slug) {
-    const host = (headers().get("x-forwarded-host") ?? headers().get("host") ?? "localhost").split(":")[0];
     return (
-      <div className="embed">{title}
-        <iframe className="embed-video" src={`https://player.twitch.tv/?channel=${slug}&parent=${host}&muted=true&autoplay=false`} title={link.title} loading="lazy" allowFullScreen />
+      <div className="embed embed-stream">{title}
+        <div className="stream-row">
+          <iframe className="embed-video" src={`https://player.twitch.tv/?channel=${slug}&parent=${host}&muted=true&autoplay=false`} title={link.title} loading="lazy" allowFullScreen />
+          {/* Chat al lado solo en pantallas anchas (se oculta por CSS y, oculto, no se carga) */}
+          {!preview && <iframe className="stream-chat" src={`https://www.twitch.tv/embed/${slug}/chat?parent=${host}&darkpopout`} title={`Chat de ${slug}`} loading="lazy" />}
+        </div>
       </div>
     );
   }
   if (link.platform === "kick" && slug) {
     return (
-      <div className="embed">{title}
+      <div className="embed embed-stream">{title}
         <iframe className="embed-video" src={`https://player.kick.com/${slug}?muted=true&autoplay=false`} title={link.title} loading="lazy" allowFullScreen />
       </div>
     );

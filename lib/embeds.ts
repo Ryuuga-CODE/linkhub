@@ -21,13 +21,18 @@ export function channelSlug(url: string) {
 
 const YT_VIDEO = /(?:v=|youtu\.be\/|shorts\/|embed\/|live\/)([\w-]{11})/;
 
+export type YtVideo = { id: string; title: string; published: string };
+
+const decode = (t: string) =>
+  t.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+
 /**
- * Devuelve el ID del vídeo a mostrar: el de la URL si es un vídeo, o el último
- * vídeo publicado si es un canal (vía su feed RSS público, sin claves).
+ * Vídeos a mostrar: si la URL es un vídeo, solo ese; si es un canal, sus últimos
+ * vídeos (hasta 12) desde su feed RSS público, sin claves.
  */
-export async function youtubeVideoId(url: string): Promise<string | null> {
+export async function youtubeVideos(url: string): Promise<{ single?: string; videos?: YtVideo[]; channelUrl?: string } | null> {
   const direct = url.match(YT_VIDEO)?.[1];
-  if (direct) return direct;
+  if (direct) return { single: direct };
   try {
     let channelId = url.match(/\/channel\/(UC[\w-]{22})/)?.[1];
     if (!channelId) {
@@ -37,8 +42,12 @@ export async function youtubeVideoId(url: string): Promise<string | null> {
       channelId = html.match(/"(?:externalId|channelId)":"(UC[\w-]{22})"/)?.[1] ?? html.match(/channel\/(UC[\w-]{22})/)?.[1];
     }
     if (!channelId) return null;
-    const feed = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`, { next: { revalidate: 1800 } });
-    return (await feed.text()).match(/<yt:videoId>([\w-]{11})<\/yt:videoId>/)?.[1] ?? null;
+    const feed = await (await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`, { next: { revalidate: 1800 } })).text();
+    const videos = [...feed.matchAll(/<entry>([\s\S]*?)<\/entry>/g)].slice(0, 12).flatMap(([, e]) => {
+      const id = e.match(/<yt:videoId>([\w-]{11})<\/yt:videoId>/)?.[1];
+      return id ? [{ id, title: decode(e.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ""), published: e.match(/<published>([^<]+)<\/published>/)?.[1] ?? "" }] : [];
+    });
+    return videos.length ? { videos, channelUrl: url } : null;
   } catch {
     return null;
   }

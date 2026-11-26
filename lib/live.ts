@@ -2,7 +2,7 @@
 
 let twitchToken: { value: string; exp: number } | null = null;
 
-async function twitchAppToken() {
+export async function twitchAppToken() {
   const id = process.env.TWITCH_CLIENT_ID, secret = process.env.TWITCH_CLIENT_SECRET;
   if (!id || !secret) return null;
   if (twitchToken && twitchToken.exp > Date.now() + 60_000) return twitchToken.value;
