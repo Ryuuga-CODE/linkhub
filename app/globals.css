@@ -226,12 +226,16 @@ legend { font-size: .9rem; font-weight: 600; margin-bottom: .5rem; }
 .theme-naturaleza .avatar { border: 4px solid #a3b98f; }
 
 /* Color del aro de la foto sobre el banner, por tema */
-.theme-gamer { --p-ring: #00f5d4; }
-.theme-empresa { --p-ring: #fff; }
-.theme-tienda { --p-ring: #f97316; }
-.theme-creador { --p-ring: rgba(255,255,255,.85); }
-.theme-minimal { --p-ring: #000; }
-.theme-naturaleza { --p-ring: #a3b98f; }
+.theme-gamer { --p-ring: #00f5d4; --p-halo: #0b0b14; }
+.theme-empresa { --p-ring: #fff; --p-halo: #f4f6f9; }
+.theme-tienda { --p-ring: #f97316; --p-halo: #fff7ed; }
+.theme-creador { --p-ring: rgba(255,255,255,.85); --p-halo: rgba(40,20,90,.55); }
+.theme-minimal { --p-ring: #000; --p-halo: #fff; }
+.theme-naturaleza { --p-ring: #a3b98f; --p-halo: #ecf3e6; }
+/* Halo del color de fondo para que el nombre se lea sobre cualquier banner */
+.has-banner .name, .has-banner .handle, .has-banner .bio {
+  text-shadow: 0 0 2px var(--p-halo), 0 0 10px var(--p-halo), 0 0 22px var(--p-halo);
+}
 .theme-gamer.has-banner .avatar { box-shadow: 0 0 0 3px #00f5d4, 0 0 24px #9b5de5; }
 
 /* Las tarjetas de muestra usan el fondo del tema */
