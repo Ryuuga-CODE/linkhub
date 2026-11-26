@@ -35,6 +35,17 @@ npx prisma migrate deploy
 npm run dev              # http://localhost:3000
 ```
 
+## Base de datos en Neon
+
+El proyecto está enlazado a Neon (`neon.ts`, rama `production`). Para traer las variables de conexión a tu `.env`:
+
+```bash
+neon login
+neon deploy      # aplica neon.ts y escribe DATABASE_URL / DATABASE_URL_UNPOOLED en .env
+```
+
+`DATABASE_URL` es la conexión *pooled* (la usa la app) y `DATABASE_URL_UNPOOLED` la directa (la usan las migraciones de Prisma).
+
 ## Publicar en internet (Vercel + Neon, gratis)
 
 1. Entra en [vercel.com](https://vercel.com) con tu cuenta de GitHub → **Add New… → Project** → importa este repositorio.
