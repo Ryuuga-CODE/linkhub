@@ -4,7 +4,7 @@ import { THEMES } from "@/lib/themes";
 import { PLATFORMS } from "@/lib/platforms";
 import { PlatformIcon } from "@/components/PlatformIcon";
 
-export default async function Home() {
+export default async function Home({ searchParams }: { searchParams: { ok?: string } }) {
   const user = await getCurrentUser();
   return (
     <main className="site">
@@ -22,6 +22,7 @@ export default async function Home() {
         </div>
       </nav>
 
+      {searchParams.ok && <p className="alert alert-ok center-box">{searchParams.ok}</p>}
       <section className="hero">
         <h1>Todos tus enlaces.<br />Un solo link.</h1>
         <p>Reúne tu TikTok, YouTube, Twitch, tu tienda de Amazon y todo lo demás en una página con el estilo de tu marca.</p>

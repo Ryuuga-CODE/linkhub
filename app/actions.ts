@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { createSession, destroySession, getCurrentUser } from "@/lib/auth";
 import { getPlatform } from "@/lib/platforms";
 import { deleteObject, keyFromUrl, mediaUrl, putObject } from "@/lib/storage";
-import { linkSchema, profileSchema, registerSchema } from "@/lib/validation";
+import { linkOptionsSchema, linkSchema, profileSchema, registerSchema, usernameSchema } from "@/lib/validation";
 
 const err = (path: string, msg: string) => redirect(`${path}?error=${encodeURIComponent(msg)}`);
 
@@ -64,7 +64,8 @@ export async function addLink(form: FormData) {
   const title = parsed.data.title || getPlatform(platform).name;
   const count = await db.link.count({ where: { userId: user.id } });
   if (count >= 50) return err("/dashboard", "Máximo 50 enlaces por perfil");
-  await db.link.create({ data: { userId: user.id, platform, title, url, position: count } });
+  const opts = linkOptionsSchema.parse(Object.fromEntries(form));
+  await db.link.create({ data: { userId: user.id, platform, title, url, position: count, ...opts } });
   revalidatePath(`/${user.username}`);
   redirect("/dashboard");
 }
@@ -150,4 +151,46 @@ export async function removeImage(form: FormData) {
   await removeStored(old);
   revalidatePath(`/${user.username}`);
   redirect("/dashboard");
+}
+
+// ---------- Editar enlace ----------
+
+export async function updateLink(form: FormData) {
+  const user = await requireUser();
+  const link = await ownedLink(user.id, String(form.get("id")));
+  const parsed = linkSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success) return err("/dashboard", parsed.error.issues[0].message);
+  const { platform, url } = parsed.data;
+  const title = parsed.data.title || getPlatform(platform).name;
+  const opts = linkOptionsSchema.parse(Object.fromEntries(form));
+  await db.link.update({ where: { id: link.id }, data: { platform, url, title, ...opts } });
+  revalidatePath(`/${user.username}`);
+  redirect("/dashboard?ok=Enlace actualizado");
+}
+
+// ---------- Cuenta ----------
+
+export async function changeUsername(form: FormData) {
+  const user = await requireUser();
+  const parsed = usernameSchema.safeParse(form.get("username"));
+  if (!parsed.success) return err("/dashboard", parsed.error.issues[0].message);
+  const username = parsed.data;
+  if (username === user.username) redirect("/dashboard");
+  if (await db.user.findUnique({ where: { username } })) return err("/dashboard", "Ese usuario ya existe");
+  await db.user.update({ where: { id: user.id }, data: { username } });
+  revalidatePath(`/${user.username}`);
+  revalidatePath(`/${username}`);
+  redirect(`/dashboard?ok=${encodeURIComponent(`Tu nuevo enlace es /${username}`)}`);
+}
+
+export async function deleteAccount(form: FormData) {
+  const user = await requireUser();
+  const password = String(form.get("password") ?? "");
+  if (!(await bcrypt.compare(password, user.passwordHash))) return err("/dashboard", "Contraseña incorrecta: la cuenta no se ha borrado");
+  // Primero las imágenes del almacenamiento, luego el usuario (sus enlaces se borran en cascada)
+  await Promise.all([user.avatarUrl, user.bannerUrl].map(removeStored));
+  await db.user.delete({ where: { id: user.id } });
+  revalidatePath(`/${user.username}`);
+  destroySession();
+  redirect("/?ok=Cuenta eliminada");
 }

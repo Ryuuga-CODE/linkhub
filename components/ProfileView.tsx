@@ -9,12 +9,15 @@ function onDark(hex: string) {
 
 type Props = {
   user: { username: string; displayName: string; bio: string; avatarUrl: string; bannerUrl: string; theme: string };
-  links: { id: string; platform: string; title: string; url: string }[];
+  links: { id: string; platform: string; title: string; url: string; display?: string; highlight?: boolean }[];
   preview?: boolean;
 };
 
 export function ProfileView({ user, links, preview }: Props) {
   const initials = user.displayName.slice(0, 2).toUpperCase();
+  const icons = links.filter((l) => l.display === "icon");
+  const buttons = links.filter((l) => l.display !== "icon");
+  const href = (l: { id: string; url: string }) => (preview ? l.url : `/go/${l.id}`);
   return (
     <div className={`profile theme-${user.theme}${preview ? " is-preview" : ""}${user.bannerUrl ? " has-banner" : ""}`}>
       {user.bannerUrl && <div className="banner" style={{ backgroundImage: `url("${user.bannerUrl}")` }} aria-hidden />}
@@ -29,14 +32,37 @@ export function ProfileView({ user, links, preview }: Props) {
         <p className="handle">@{user.username}</p>
         {user.bio && <p className="bio">{user.bio}</p>}
 
+        {icons.length > 0 && (
+          <ul className="social-row">
+            {icons.map((l) => {
+              const p = getPlatform(l.platform);
+              return (
+                <li key={l.id}>
+                  <a
+                    className={`social-icon${l.highlight ? " is-highlight" : ""}`}
+                    href={href(l)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={l.title}
+                    aria-label={l.title}
+                    style={{ ["--brand" as string]: `#${p.color}`, ["--brand-on-dark" as string]: onDark(p.color) }}
+                  >
+                    <PlatformIcon platform={l.platform} size={24} />
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
         <ul className="links">
-          {links.map((l) => {
+          {buttons.map((l) => {
             const p = getPlatform(l.platform);
             return (
               <li key={l.id}>
                 <a
-                  className="link-btn"
-                  href={preview ? l.url : `/go/${l.id}`}
+                  className={`link-btn${l.highlight ? " is-highlight" : ""}`}
+                  href={href(l)}
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ ["--brand" as string]: `#${p.color}`, ["--brand-on-dark" as string]: onDark(p.color) }}
@@ -47,7 +73,7 @@ export function ProfileView({ user, links, preview }: Props) {
               </li>
             );
           })}
-          {links.length === 0 && <li className="empty">Todavía no hay enlaces.</li>}
+          {buttons.length === 0 && icons.length === 0 && <li className="empty">Todavía no hay enlaces.</li>}
         </ul>
         <footer className="brandmark">Hecho con <a href="/">LinkHub</a></footer>
       </div>

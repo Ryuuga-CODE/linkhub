@@ -32,6 +32,8 @@ model Link {
   url       String
   position  Int      @default(0)
   active    Boolean  @default(true)
+  display   String   @default("button") // "button" | "icon"
+  highlight Boolean  @default(false)
   clicks    Int      @default(0)
   createdAt DateTime @default(now())
 

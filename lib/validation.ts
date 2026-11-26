@@ -32,3 +32,8 @@ export const linkSchema = z.object({
     .transform((u) => (/^(https?:|mailto:)/i.test(u) ? u : `https://${u}`))
     .pipe(z.string().url("URL no válida").refine((u) => /^(https?:|mailto:)/i.test(u), "Solo se permiten enlaces http(s) o mailto")),
 });
+
+export const linkOptionsSchema = z.object({
+  display: z.enum(["button", "icon"]).catch("button"),
+  highlight: z.preprocess((v) => v === "on", z.boolean()),
+});
