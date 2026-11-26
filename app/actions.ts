@@ -8,7 +8,7 @@ import { db } from "@/lib/db";
 import { createSession, destroySession, getCurrentUser } from "@/lib/auth";
 import { getPlatform } from "@/lib/platforms";
 import { deleteObject, keyFromUrl, mediaUrl, putObject } from "@/lib/storage";
-import { linkOptionsSchema, linkSchema, profileSchema, registerSchema, usernameSchema } from "@/lib/validation";
+import { customStyleSchema, linkOptionsSchema, linkSchema, profileSchema, registerSchema, usernameSchema } from "@/lib/validation";
 
 const err = (path: string, msg: string) => redirect(`${path}?error=${encodeURIComponent(msg)}`);
 
@@ -193,4 +193,33 @@ export async function deleteAccount(form: FormData) {
   revalidatePath(`/${user.username}`);
   destroySession();
   redirect("/?ok=Cuenta eliminada");
+}
+
+// ---------- Personalización ----------
+
+export async function updateStyle(form: FormData) {
+  const user = await requireUser();
+  const raw = Object.fromEntries(form) as Record<string, string>;
+  // Un color solo se aplica si su casilla "usar color propio" está marcada
+  for (const k of ["colorButton", "colorButtonText", "colorText", "colorBg", "colorBg2"]) {
+    if (raw[`use_${k}`] !== "on") raw[k] = "";
+  }
+  if (!raw.colorBg) raw.colorBg2 = "";
+  const data = customStyleSchema.parse(raw);
+  await db.user.update({ where: { id: user.id }, data });
+  revalidatePath(`/${user.username}`);
+  redirect("/dashboard?ok=Estilo guardado#estilo");
+}
+
+// ---------- Reordenar arrastrando ----------
+
+export async function reorderLinks(ids: string[]) {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Sesión caducada" };
+  const links = await db.link.findMany({ where: { userId: user.id }, select: { id: true } });
+  const mine = new Set(links.map((l) => l.id));
+  if (ids.length !== mine.size || !ids.every((id) => mine.has(id))) return { error: "Orden no válido" };
+  await db.$transaction(ids.map((id, position) => db.link.update({ where: { id }, data: { position } })));
+  revalidatePath(`/${user.username}`);
+  return {};
 }

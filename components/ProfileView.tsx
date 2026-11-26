@@ -1,5 +1,6 @@
 import { PlatformIcon } from "./PlatformIcon";
 import { getPlatform } from "@/lib/platforms";
+import { fontHref, profileStyle, type CustomStyle } from "@/lib/customStyle";
 
 // Marcas con color muy oscuro (TikTok, X, GitHub...) se vuelven blancas sobre fondos oscuros
 function onDark(hex: string) {
@@ -8,7 +9,7 @@ function onDark(hex: string) {
 }
 
 type Props = {
-  user: { username: string; displayName: string; bio: string; avatarUrl: string; bannerUrl: string; theme: string };
+  user: { username: string; displayName: string; bio: string; avatarUrl: string; bannerUrl: string; theme: string } & Partial<CustomStyle>;
   links: { id: string; platform: string; title: string; url: string; display?: string; highlight?: boolean }[];
   preview?: boolean;
 };
@@ -18,8 +19,14 @@ export function ProfileView({ user, links, preview }: Props) {
   const icons = links.filter((l) => l.display === "icon");
   const buttons = links.filter((l) => l.display !== "icon");
   const href = (l: { id: string; url: string }) => (preview ? l.url : `/go/${l.id}`);
+  const custom = profileStyle(user);
+  const font = fontHref(user.font ?? "");
   return (
-    <div className={`profile theme-${user.theme}${preview ? " is-preview" : ""}${user.bannerUrl ? " has-banner" : ""}`}>
+    <div
+      className={`profile theme-${user.theme}${preview ? " is-preview" : ""}${user.bannerUrl ? " has-banner" : ""} ${custom.className}`}
+      style={custom.vars as React.CSSProperties}
+    >
+      {font && <link rel="stylesheet" href={font} />}
       {user.bannerUrl && <div className="banner" style={{ backgroundImage: `url("${user.bannerUrl}")` }} aria-hidden />}
       <div className="profile-inner">
         {user.avatarUrl ? (

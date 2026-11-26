@@ -19,6 +19,15 @@ model User {
   avatarUrl    String   @default("")
   bannerUrl    String   @default("")
   theme        String   @default("creador")
+  // Personalización encima del tema ("" = usar el del tema)
+  colorButton     String @default("")
+  colorButtonText String @default("")
+  colorText       String @default("")
+  colorBg         String @default("")
+  colorBg2        String @default("")
+  buttonShape     String @default("")
+  buttonFill      String @default("")
+  font            String @default("")
   createdAt    DateTime @default(now())
   links        Link[]
 }

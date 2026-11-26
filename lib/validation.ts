@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { PLATFORM_MAP } from "./platforms";
 import { THEME_IDS } from "./themes";
+import { BUTTON_FILLS, BUTTON_SHAPES, FONTS } from "./customStyle";
 
 export const RESERVED = new Set(["login", "register", "dashboard", "go", "api", "admin", "logout", "_next"]);
 
@@ -36,4 +37,18 @@ export const linkSchema = z.object({
 export const linkOptionsSchema = z.object({
   display: z.enum(["button", "icon"]).catch("button"),
   highlight: z.preprocess((v) => v === "on", z.boolean()),
+});
+
+const color = z.string().trim().regex(/^(#[0-9a-fA-F]{6})?$/, "Color no válido").catch("");
+const oneOf = (ids: string[]) => z.string().refine((v) => ids.includes(v)).catch("");
+
+export const customStyleSchema = z.object({
+  colorButton: color,
+  colorButtonText: color,
+  colorText: color,
+  colorBg: color,
+  colorBg2: color,
+  buttonShape: oneOf(BUTTON_SHAPES.map((x) => x.id)),
+  buttonFill: oneOf(BUTTON_FILLS.map((x) => x.id)),
+  font: oneOf(FONTS.map((x) => x.id)),
 });

@@ -8,6 +8,8 @@ import { PlatformIcon } from "@/components/PlatformIcon";
 import { ProfileView } from "@/components/ProfileView";
 import { ShareButtons } from "@/components/ShareButtons";
 import { ImageUploader } from "@/components/ImageUploader";
+import { StyleEditor } from "@/components/StyleEditor";
+import { SortableList } from "@/components/SortableList";
 import { siteUrl } from "@/lib/site";
 import QRCode from "qrcode";
 import { addLink, changeUsername, deleteAccount, deleteLink, logout, moveLink, toggleLink, updateLink, updateProfile } from "../actions";
@@ -74,6 +76,16 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
             </form>
           </section>
 
+          <section className="card" id="estilo">
+            <h2>Personalizar estilo</h2>
+            <StyleEditor
+              initial={{
+                colorButton: user.colorButton, colorButtonText: user.colorButtonText, colorText: user.colorText,
+                colorBg: user.colorBg, colorBg2: user.colorBg2, buttonShape: user.buttonShape, buttonFill: user.buttonFill, font: user.font,
+              }}
+            />
+          </section>
+
           <section className="card">
             <h2>Añadir enlace</h2>
             <form action={addLink} className="add-link" key={`add-${links.length}`}>
@@ -89,10 +101,12 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
 
           <section className="card">
             <h2>Mis enlaces <span className="muted">· {totalClicks} clics en total</span></h2>
-            <ul className="link-admin">
+            {links.length > 1 && <p className="muted">Arrastra ⋮⋮ para cambiar el orden.</p>}
+            <SortableList className="link-admin" ids={links.map((l) => l.id)} key={links.map((l) => l.id).join()}>
               {links.map((l, i) => (
-                <li key={l.id} className={l.active ? "" : "inactive"}>
+                <li key={l.id} data-id={l.id} className={l.active ? "" : "inactive"}>
                   <div className="la-row">
+                    <span className="drag-handle" data-drag-handle title="Arrastrar para ordenar" aria-hidden>⋮⋮</span>
                     <span className="la-icon" style={{ color: `#${getPlatform(l.platform).color}` }}><PlatformIcon platform={l.platform} /></span>
                     <div className="la-text">
                       <strong>
@@ -125,8 +139,8 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
                   </details>
                 </li>
               ))}
-              {links.length === 0 && <li className="muted">Añade tu primer enlace arriba.</li>}
-            </ul>
+            </SortableList>
+            {links.length === 0 && <p className="muted">Añade tu primer enlace arriba.</p>}
           </section>
 
           <section className="card">
