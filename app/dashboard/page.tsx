@@ -12,7 +12,7 @@ import { StyleEditor } from "@/components/StyleEditor";
 import { SortableList } from "@/components/SortableList";
 import { siteUrl } from "@/lib/site";
 import QRCode from "qrcode";
-import { addLink, changeUsername, deleteAccount, deleteLink, logout, moveLink, toggleLink, updateLink, updateProfile } from "../actions";
+import { addLink, changeUsername, deleteAccount, updateContact, deleteLink, logout, moveLink, toggleLink, updateLink, updateProfile } from "../actions";
 
 export default async function Dashboard({ searchParams }: { searchParams: { error?: string; ok?: string } }) {
   const user = await getCurrentUser();
@@ -90,6 +90,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
           <section className="card">
             <h2>Añadir enlace</h2>
             <form action={addLink} className="add-link" key={`add-${links.length}`}>
+              <KindFields />
               <select name="platform" defaultValue="tiktok" aria-label="Plataforma">
                 {PLATFORMS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
@@ -114,6 +115,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
                         {l.title}
                         {l.display === "icon" && <span className="tag">icono</span>}
                         {l.highlight && <span className="tag tag-hot">destacado</span>}
+                        {l.kind === "product" && <span className="tag tag-shop">producto{l.price ? ` · ${l.price}` : ""}</span>}
                       </strong>
                       <a href={l.url} target="_blank" rel="noopener noreferrer">{l.url}</a>
                     </div>
@@ -129,6 +131,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
                     <summary>✏️ Editar</summary>
                     <form action={updateLink} className="add-link" key={`${l.id}-${l.platform}-${l.url}-${l.title}-${l.display}-${l.highlight}`}>
                       <input type="hidden" name="id" value={l.id} />
+                      <KindFields kind={l.kind} price={l.price} />
                       <select name="platform" defaultValue={l.platform} aria-label="Plataforma">
                         {PLATFORMS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                       </select>
@@ -137,11 +140,25 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
                       <button className="btn">Guardar</button>
                       <LinkOptions display={l.display} highlight={l.highlight} />
                     </form>
+                    <ImageUploader key={l.thumbnailUrl || `thumb-${l.id}`} kind="thumb" linkId={l.id} current={l.thumbnailUrl} />
                   </details>
                 </li>
               ))}
             </SortableList>
             {links.length === 0 && <p className="muted">Añade tu primer enlace arriba.</p>}
+          </section>
+
+          <section className="card" id="contacto">
+            <h2>Contacto</h2>
+            <p className="muted">Ideal para empresas y tiendas. Lo que rellenes aparece en tu página con botones para llamar, escribir o llegar, y un botón para guardarte en la agenda.</p>
+            <form action={updateContact} className="contact-form">
+              <label>Teléfono<input name="contactPhone" type="tel" defaultValue={user.contactPhone} placeholder="+52 55 1234 5678" maxLength={25} /></label>
+              <label>WhatsApp<input name="contactWhatsapp" type="tel" defaultValue={user.contactWhatsapp} placeholder="+52 55 1234 5678" maxLength={25} /></label>
+              <label>Correo<input name="contactEmail" type="email" defaultValue={user.contactEmail} placeholder="hola@tunegocio.com" /></label>
+              <label>Horario<input name="contactHours" defaultValue={user.contactHours} placeholder="Lun–Vie 9:00–18:00" maxLength={120} /></label>
+              <label className="wide">Dirección<input name="contactAddress" defaultValue={user.contactAddress} placeholder="Calle, número, ciudad" maxLength={200} /></label>
+              <button className="btn">Guardar contacto</button>
+            </form>
           </section>
 
           <section className="card">
@@ -181,6 +198,16 @@ function LinkOptions({ display = "button", highlight = false }: { display?: stri
     <div className="link-options">
       <label className="check"><input type="checkbox" name="display" value="icon" defaultChecked={display === "icon"} /> Mostrar como icono (fila de redes bajo la bio)</label>
       <label className="check"><input type="checkbox" name="highlight" defaultChecked={highlight} /> ⭐ Destacar con animación</label>
+    </div>
+  );
+}
+
+function KindFields({ kind = "link", price = "" }: { kind?: string; price?: string }) {
+  return (
+    <div className="kind-fields">
+      <label className="check"><input type="radio" name="kind" value="link" defaultChecked={kind !== "product"} /> 🔗 Enlace</label>
+      <label className="check"><input type="radio" name="kind" value="product" defaultChecked={kind === "product"} /> 🛍️ Producto (con foto y precio)</label>
+      <input className="price-field" name="price" defaultValue={price} placeholder="Precio, ej. $299 MXN" maxLength={30} aria-label="Precio" />
     </div>
   );
 }

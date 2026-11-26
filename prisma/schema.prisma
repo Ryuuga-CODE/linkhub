@@ -28,6 +28,12 @@ model User {
   buttonShape     String @default("")
   buttonFill      String @default("")
   font            String @default("")
+  // Contacto (empresas y tiendas); vacío = no se muestra
+  contactPhone    String @default("")
+  contactWhatsapp String @default("")
+  contactEmail    String @default("")
+  contactAddress  String @default("")
+  contactHours    String @default("")
   createdAt    DateTime @default(now())
   links        Link[]
   events       Event[]
@@ -44,6 +50,9 @@ model Link {
   active    Boolean  @default(true)
   display   String   @default("button") // "button" | "icon"
   highlight Boolean  @default(false)
+  kind      String   @default("link") // "link" | "product"
+  price     String   @default("")
+  thumbnailUrl String @default("")
   clicks    Int      @default(0)
   createdAt DateTime @default(now())
 

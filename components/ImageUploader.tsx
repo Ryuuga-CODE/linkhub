@@ -4,9 +4,9 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { uploadImage, removeImage } from "@/app/actions";
 
-type Props = { kind: "avatar" | "banner"; current: string };
+type Props = { kind: "avatar" | "banner" | "thumb"; current: string; linkId?: string };
 
-const LIMITS = { avatar: { w: 512, h: 512, crop: true }, banner: { w: 1600, h: 900, crop: false } };
+const LIMITS = { avatar: { w: 512, h: 512, crop: true }, banner: { w: 1600, h: 900, crop: false }, thumb: { w: 400, h: 400, crop: true } };
 
 /** Reduce y comprime la imagen en el navegador antes de subirla (WebP). */
 async function prepare(file: File, kind: Props["kind"]): Promise<Blob> {
@@ -30,13 +30,17 @@ async function prepare(file: File, kind: Props["kind"]): Promise<Blob> {
   return blob ?? file;
 }
 
-export function ImageUploader({ kind, current }: Props) {
+export function ImageUploader({ kind, current, linkId }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const [preview, setPreview] = useState<string>(current);
   const [error, setError] = useState("");
   const [busy, startBusy] = useTransition();
-  const isAvatar = kind === "avatar";
+  const TEXT = {
+    avatar: { title: "Foto de perfil", help: "Se recorta en círculo.", empty: "📷" },
+    banner: { title: "Banner de fondo", help: "Se ve arriba de tu página y se desvanece hacia abajo.", empty: "🖼️ Toca para elegir un banner" },
+    thumb: { title: "Imagen del enlace", help: "Miniatura cuadrada (foto del producto, portada…).", empty: "🖼️" },
+  }[kind];
 
   async function onPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -51,6 +55,7 @@ export function ImageUploader({ kind, current }: Props) {
         if (blob.size > 4 * 1024 * 1024) { setError("La imagen pesa demasiado (máximo 4 MB)."); setPreview(current); return; }
         const fd = new FormData();
         fd.set("kind", kind);
+        if (linkId) fd.set("linkId", linkId);
         fd.set("file", new File([blob], `${kind}.${blob.type === "image/gif" ? "gif" : "webp"}`, { type: blob.type }));
         const res = await uploadImage(fd);
         if (res.error) { setError(res.error); setPreview(current); return; }
@@ -70,16 +75,14 @@ export function ImageUploader({ kind, current }: Props) {
         onClick={() => input.current?.click()}
         disabled={busy}
         style={preview ? { backgroundImage: `url("${preview}")` } : undefined}
-        aria-label={isAvatar ? "Cambiar foto de perfil" : "Cambiar banner"}
+        aria-label={`Cambiar ${TEXT.title.toLowerCase()}`}
       >
-        {!preview && <span className="uploader-empty">{isAvatar ? "📷" : "🖼️ Toca para elegir un banner"}</span>}
+        {!preview && <span className="uploader-empty">{TEXT.empty}</span>}
         {busy && <span className="uploader-busy">Subiendo…</span>}
       </button>
       <div className="uploader-side">
-        <strong>{isAvatar ? "Foto de perfil" : "Banner de fondo"}</strong>
-        <span className="muted">
-          {isAvatar ? "Se recorta en círculo." : "Se ve arriba de tu página y se desvanece hacia abajo."} JPG, PNG, WebP o GIF.
-        </span>
+        <strong>{TEXT.title}</strong>
+        <span className="muted">{TEXT.help} JPG, PNG, WebP o GIF.</span>
         <div className="uploader-actions">
           <button type="button" className="btn btn-ghost" onClick={() => input.current?.click()} disabled={busy}>
             {current ? "Cambiar" : "Subir imagen"}
@@ -87,6 +90,7 @@ export function ImageUploader({ kind, current }: Props) {
           {current && (
             <form action={removeImage}>
               <input type="hidden" name="kind" value={kind} />
+              {linkId && <input type="hidden" name="linkId" value={linkId} />}
               <button className="btn btn-ghost btn-danger" disabled={busy}>Quitar</button>
             </form>
           )}

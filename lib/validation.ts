@@ -37,6 +37,16 @@ export const linkSchema = z.object({
 export const linkOptionsSchema = z.object({
   display: z.enum(["button", "icon"]).catch("button"),
   highlight: z.preprocess((v) => v === "on", z.boolean()),
+  kind: z.enum(["link", "product"]).catch("link"),
+  price: z.string().trim().max(30, "El precio admite 30 caracteres").catch(""),
+});
+
+export const contactSchema = z.object({
+  contactPhone: z.string().trim().regex(/^[+\d\s()-]{0,25}$/, "Teléfono no válido"),
+  contactWhatsapp: z.string().trim().regex(/^[+\d\s()-]{0,25}$/, "WhatsApp no válido: usa el número con código de país"),
+  contactEmail: z.union([z.literal(""), z.string().trim().toLowerCase().email("Correo de contacto no válido")]),
+  contactAddress: z.string().trim().max(200, "La dirección admite 200 caracteres"),
+  contactHours: z.string().trim().max(120, "El horario admite 120 caracteres"),
 });
 
 const color = z.string().trim().regex(/^(#[0-9a-fA-F]{6})?$/, "Color no válido").catch("");

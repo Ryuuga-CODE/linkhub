@@ -9,7 +9,7 @@ import { createSession, destroySession, getCurrentUser } from "@/lib/auth";
 import { getPlatform } from "@/lib/platforms";
 import { deleteObject, keyFromUrl, mediaUrl, putObject } from "@/lib/storage";
 import { clear, clientKey, hit, waitMessage } from "@/lib/rateLimit";
-import { customStyleSchema, linkOptionsSchema, linkSchema, profileSchema, registerSchema, usernameSchema } from "@/lib/validation";
+import { contactSchema, customStyleSchema, linkOptionsSchema, linkSchema, profileSchema, registerSchema, usernameSchema } from "@/lib/validation";
 
 const err = (path: string, msg: string) => redirect(`${path}?error=${encodeURIComponent(msg)}`);
 
@@ -87,6 +87,7 @@ export async function deleteLink(form: FormData) {
   const user = await requireUser();
   const link = await ownedLink(user.id, String(form.get("id")));
   await db.link.delete({ where: { id: link.id } });
+  await removeStored(link.thumbnailUrl);
   // Compacta posiciones
   const rest = await db.link.findMany({ where: { userId: user.id }, orderBy: { position: "asc" } });
   await db.$transaction(rest.map((l, i) => db.link.update({ where: { id: l.id }, data: { position: i } })));
@@ -119,8 +120,8 @@ export async function moveLink(form: FormData) {
 
 const IMAGE_TYPES: Record<string, string> = { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png", "image/gif": "gif" };
 const MAX_BYTES = 4 * 1024 * 1024;
-type ImageKind = "avatar" | "banner";
-const FIELD: Record<ImageKind, "avatarUrl" | "bannerUrl"> = { avatar: "avatarUrl", banner: "bannerUrl" };
+type ImageKind = "avatar" | "banner" | "thumb";
+const FIELD: Record<Exclude<ImageKind, "thumb">, "avatarUrl" | "bannerUrl"> = { avatar: "avatarUrl", banner: "bannerUrl" };
 
 async function removeStored(url: string) {
   const key = keyFromUrl(url);
@@ -132,7 +133,10 @@ export async function uploadImage(form: FormData): Promise<{ error?: string; url
   if (!user) return { error: "Tu sesión ha caducado. Vuelve a entrar." };
   const kind = form.get("kind") as ImageKind;
   const file = form.get("file");
-  if (!(kind in FIELD)) return { error: "Tipo de imagen no válido" };
+  if (!(kind in FIELD) && kind !== "thumb") return { error: "Tipo de imagen no válido" };
+  // Miniatura de un enlace: comprobar que es suyo
+  const link = kind === "thumb" ? await db.link.findFirst({ where: { id: String(form.get("linkId")), userId: user.id } }) : null;
+  if (kind === "thumb" && !link) return { error: "Enlace no encontrado" };
   if (!(file instanceof File) || file.size === 0) return { error: "No se recibió ninguna imagen" };
   const ext = IMAGE_TYPES[file.type];
   if (!ext) return { error: "Formato no admitido. Usa JPG, PNG, WebP o GIF." };
@@ -141,9 +145,14 @@ export async function uploadImage(form: FormData): Promise<{ error?: string; url
   const key = `${user.id}/${kind}-${randomUUID()}.${ext}`;
   await putObject(key, new Uint8Array(await file.arrayBuffer()), file.type);
   const url = mediaUrl(key);
-  const old = user[FIELD[kind]];
-  await db.user.update({ where: { id: user.id }, data: { [FIELD[kind]]: url } });
-  await removeStored(old);
+  if (link) {
+    await db.link.update({ where: { id: link.id }, data: { thumbnailUrl: url } });
+    await removeStored(link.thumbnailUrl);
+  } else {
+    const field = FIELD[kind as keyof typeof FIELD];
+    await db.user.update({ where: { id: user.id }, data: { [field]: url } });
+    await removeStored(user[field]);
+  }
   revalidatePath(`/${user.username}`);
   revalidatePath("/dashboard");
   return { url };
@@ -152,10 +161,16 @@ export async function uploadImage(form: FormData): Promise<{ error?: string; url
 export async function removeImage(form: FormData) {
   const user = await requireUser();
   const kind = form.get("kind") as ImageKind;
-  if (!(kind in FIELD)) redirect("/dashboard");
-  const old = user[FIELD[kind]];
-  await db.user.update({ where: { id: user.id }, data: { [FIELD[kind]]: "" } });
-  await removeStored(old);
+  if (kind === "thumb") {
+    const link = await ownedLink(user.id, String(form.get("linkId")));
+    await db.link.update({ where: { id: link.id }, data: { thumbnailUrl: "" } });
+    await removeStored(link.thumbnailUrl);
+  } else {
+    if (!(kind in FIELD)) redirect("/dashboard");
+    const field = FIELD[kind as keyof typeof FIELD];
+    await db.user.update({ where: { id: user.id }, data: { [field]: "" } });
+    await removeStored(user[field]);
+  }
   revalidatePath(`/${user.username}`);
   redirect("/dashboard");
 }
@@ -195,7 +210,8 @@ export async function deleteAccount(form: FormData) {
   const password = String(form.get("password") ?? "");
   if (!(await bcrypt.compare(password, user.passwordHash))) return err("/dashboard", "Contraseña incorrecta: la cuenta no se ha borrado");
   // Primero las imágenes del almacenamiento, luego el usuario (sus enlaces se borran en cascada)
-  await Promise.all([user.avatarUrl, user.bannerUrl].map(removeStored));
+  const thumbs = await db.link.findMany({ where: { userId: user.id }, select: { thumbnailUrl: true } });
+  await Promise.all([user.avatarUrl, user.bannerUrl, ...thumbs.map((t) => t.thumbnailUrl)].map(removeStored));
   await db.user.delete({ where: { id: user.id } });
   revalidatePath(`/${user.username}`);
   destroySession();
@@ -229,4 +245,15 @@ export async function reorderLinks(ids: string[]) {
   await db.$transaction(ids.map((id, position) => db.link.update({ where: { id }, data: { position } })));
   revalidatePath(`/${user.username}`);
   return {};
+}
+
+// ---------- Contacto ----------
+
+export async function updateContact(form: FormData) {
+  const user = await requireUser();
+  const parsed = contactSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success) return err("/dashboard", parsed.error.issues[0].message);
+  await db.user.update({ where: { id: user.id }, data: parsed.data });
+  revalidatePath(`/${user.username}`);
+  redirect("/dashboard?ok=Contacto guardado#contacto");
 }

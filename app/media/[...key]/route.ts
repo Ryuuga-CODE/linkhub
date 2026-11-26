@@ -1,6 +1,6 @@
 import { getObject } from "@/lib/storage";
 
-const KEY_RE = /^[a-z0-9]+\/(avatar|banner)-[0-9a-f-]{36}\.(webp|jpg|png|gif)$/;
+const KEY_RE = /^[a-z0-9]+\/(avatar|banner|thumb)-[0-9a-f-]{36}\.(webp|jpg|png|gif)$/;
 
 // Sirve las imágenes del bucket. Cada subida usa una clave nueva, así que se
 // pueden cachear para siempre en el navegador y en la CDN de Vercel.

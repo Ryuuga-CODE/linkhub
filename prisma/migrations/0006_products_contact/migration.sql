@@ -1,0 +1,9 @@
+-- Miniaturas, productos y datos de contacto
+ALTER TABLE "Link" ADD COLUMN "kind" TEXT NOT NULL DEFAULT 'link';
+ALTER TABLE "Link" ADD COLUMN "price" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "Link" ADD COLUMN "thumbnailUrl" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "User" ADD COLUMN "contactPhone" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "User" ADD COLUMN "contactWhatsapp" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "User" ADD COLUMN "contactEmail" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "User" ADD COLUMN "contactAddress" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "User" ADD COLUMN "contactHours" TEXT NOT NULL DEFAULT '';
