@@ -83,6 +83,28 @@ legend { font-size: .9rem; font-weight: 600; margin-bottom: .5rem; }
 .la-actions button { border: 1px solid var(--line); background: #fff; border-radius: 8px; width: 34px; height: 34px; cursor: pointer; }
 .la-actions button:disabled { opacity: .3; cursor: default; }
 
+/* Subida de imágenes */
+.uploader { display: flex; gap: 1rem; align-items: center; }
+.uploader-drop {
+  position: relative; flex: none; border: 2px dashed var(--line); background: #fafafe center / cover no-repeat;
+  cursor: pointer; display: grid; place-items: center; color: var(--muted); padding: 0; overflow: hidden;
+}
+.uploader-drop:hover { border-color: var(--accent); }
+.uploader-banner { flex-direction: column; align-items: stretch; }
+.uploader-banner .uploader-drop {
+  width: 100%; aspect-ratio: 16 / 6; border-radius: 14px;
+  -webkit-mask-image: linear-gradient(to bottom, #000 50%, rgba(0,0,0,.25) 100%);
+          mask-image: linear-gradient(to bottom, #000 50%, rgba(0,0,0,.25) 100%);
+}
+.uploader-avatar .uploader-drop { width: 96px; height: 96px; border-radius: 50%; font-size: 1.8rem; }
+.uploader-empty { font-weight: 600; }
+.uploader-busy { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(255,255,255,.75); color: var(--fg); font-weight: 700; font-size: .9rem; }
+.uploader-side { display: grid; gap: .35rem; }
+.uploader-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+.uploader-actions .btn { padding: .45rem 1rem; font-size: .9rem; }
+.btn-danger { color: var(--danger); }
+.uploader-error { color: var(--danger); font-size: .9rem; }
+
 @media (max-width: 900px) {
   .dash-grid { grid-template-columns: 1fr; }
   .dash-preview { position: static; }
@@ -95,12 +117,25 @@ legend { font-size: .9rem; font-weight: 600; margin-bottom: .5rem; }
 .profile {
   --p-bg: #fff; --p-fg: #111; --p-muted: #666;
   --p-btn-bg: #f2f2f2; --p-btn-fg: #111; --p-btn-border: transparent; --p-btn-radius: 12px; --p-btn-shadow: none;
-  --p-font: system-ui, sans-serif; --p-avatar-radius: 50%;
+  --p-font: system-ui, sans-serif;
   min-height: 100vh; background: var(--p-bg); color: var(--p-fg); font-family: var(--p-font);
 }
+.profile { position: relative; isolation: isolate; }
 .profile.is-preview { min-height: 100%; }
-.profile-inner { max-width: 560px; margin: 0 auto; padding: 3rem 1.25rem 2rem; text-align: center; }
-.avatar { width: 104px; height: 104px; border-radius: var(--p-avatar-radius); object-fit: cover; display: block; margin: 0 auto 1rem; }
+.profile-inner { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: 3rem 1.25rem 2rem; text-align: center; }
+
+/* Banner: visible arriba y desvanecido en su mitad inferior hacia el fondo del tema */
+.banner {
+  position: absolute; inset: 0 0 auto 0; height: 380px; z-index: 0;
+  background-size: cover; background-position: center;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 50%, transparent 100%);
+          mask-image: linear-gradient(to bottom, #000 0%, #000 50%, transparent 100%);
+}
+.is-preview .banner { height: 300px; }
+.has-banner .profile-inner { padding-top: 170px; }
+.is-preview.has-banner .profile-inner { padding-top: 130px; }
+.has-banner .avatar { box-shadow: 0 0 0 4px var(--p-ring, #fff), 0 8px 24px rgba(0,0,0,.25); }
+.avatar { width: 104px; height: 104px; border-radius: 50%; object-fit: cover; display: block; margin: 0 auto 1rem; }
 .avatar-initials { display: grid; place-items: center; background: var(--p-btn-bg); color: var(--p-btn-fg); font-size: 2rem; font-weight: 800; border: 2px solid var(--p-btn-border); }
 .name { margin: 0; font-size: 1.5rem; }
 .handle { margin: .25rem 0 0; color: var(--p-muted); }
@@ -125,7 +160,7 @@ legend { font-size: .9rem; font-weight: 600; margin-bottom: .5rem; }
   --p-fg: #e8fbff; --p-muted: #8be9fd;
   --p-btn-bg: rgba(15, 15, 30, .85); --p-btn-fg: #e8fbff; --p-btn-border: #00f5d4;
   --p-btn-radius: 4px; --p-btn-shadow: 0 0 12px rgba(0, 245, 212, .45), inset 0 0 8px rgba(155, 93, 229, .35);
-  --p-font: "Courier New", ui-monospace, monospace; --p-avatar-radius: 8px;
+  --p-font: "Courier New", ui-monospace, monospace;
 }
 .theme-gamer .name { text-transform: uppercase; letter-spacing: .12em; text-shadow: 0 0 8px #f15bb5, 0 0 18px #9b5de5; }
 .theme-gamer .avatar { box-shadow: 0 0 0 3px #00f5d4, 0 0 24px #9b5de5; }
@@ -138,7 +173,7 @@ legend { font-size: .9rem; font-weight: 600; margin-bottom: .5rem; }
 .theme-empresa {
   --p-bg: linear-gradient(180deg, #0f2a4a 0 100px, #f4f6f9 100px); --p-fg: #0f2a4a; --p-muted: #5b6b80;
   --p-btn-bg: #fff; --p-btn-fg: #0f2a4a; --p-btn-border: #d5dde8; --p-btn-radius: 6px;
-  --p-btn-shadow: 0 1px 2px rgba(15, 42, 74, .08); --p-font: "Helvetica Neue", Arial, sans-serif; --p-avatar-radius: 12px;
+  --p-btn-shadow: 0 1px 2px rgba(15, 42, 74, .08); --p-font: "Helvetica Neue", Arial, sans-serif;
 }
 .theme-empresa .avatar { border: 4px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,.15); background: #fff; }
 .theme-empresa .link-btn { font-weight: 600; }
@@ -189,6 +224,15 @@ legend { font-size: .9rem; font-weight: 600; margin-bottom: .5rem; }
 }
 .theme-naturaleza .link-btn:hover { background: #2f4f2f; color: #fdfbf5; border-color: #2f4f2f; }
 .theme-naturaleza .avatar { border: 4px solid #a3b98f; }
+
+/* Color del aro de la foto sobre el banner, por tema */
+.theme-gamer { --p-ring: #00f5d4; }
+.theme-empresa { --p-ring: #fff; }
+.theme-tienda { --p-ring: #f97316; }
+.theme-creador { --p-ring: rgba(255,255,255,.85); }
+.theme-minimal { --p-ring: #000; }
+.theme-naturaleza { --p-ring: #a3b98f; }
+.theme-gamer.has-banner .avatar { box-shadow: 0 0 0 3px #00f5d4, 0 0 24px #9b5de5; }
 
 /* Las tarjetas de muestra usan el fondo del tema */
 .theme-card, .theme-option { display: grid; background: var(--p-bg); background-attachment: scroll; color: var(--p-fg); font-family: var(--p-font); }

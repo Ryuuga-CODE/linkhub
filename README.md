@@ -8,6 +8,7 @@ Plataforma estilo *link-in-bio*: cada persona se registra, elige un nombre de us
 - **Página pública** en `/<usuario>` con avatar, nombre, bio y botones de enlaces.
 - **6 estilos visuales**: 🎮 Gamer · 💼 Empresa · 🛍️ Tienda · ✨ Creador · ◻️ Minimal · 🌿 Naturaleza.
 - **26 plataformas** con su icono y color de marca (vía [simple-icons](https://simpleicons.org)): TikTok, YouTube, Twitch, Kick, Instagram, X, Threads, Facebook, Discord, Steam, Spotify, Amazon, Mercado Libre, Shopify, Etsy, PayPal, Patreon, Ko-fi, LinkedIn, WhatsApp, Telegram, Pinterest, Snapchat, GitHub, sitio web y correo.
+- **Foto de perfil y banner** subidos desde el dispositivo; el banner se desvanece hacia abajo sobre el fondo del tema.
 - **Panel** para editar perfil, añadir/ocultar/eliminar/reordenar enlaces, con vista previa en vivo tipo móvil.
 - **Contador de clics** por enlace (los botones públicos pasan por `/go/<id>`).
 
@@ -45,6 +46,12 @@ neon deploy      # aplica neon.ts y escribe DATABASE_URL / DATABASE_URL_UNPOOLED
 ```
 
 `DATABASE_URL` es la conexión *pooled* (la usa la app) y `DATABASE_URL_UNPOOLED` la directa (la usan las migraciones de Prisma).
+
+### Imágenes (Neon Object Storage)
+
+Las fotos de perfil y los banners se suben desde el dispositivo, se comprimen en el navegador (WebP) y se guardan en el bucket `media` declarado en `neon.ts`. Se sirven desde `/media/...` con caché de un año (cada subida usa un nombre nuevo).
+
+`neon deploy` escribe `AWS_ENDPOINT_URL_S3`, `AWS_REGION`, `AWS_ACCESS_KEY_ID` y `AWS_SECRET_ACCESS_KEY` en `.env`, que es lo que usa la app en local. **En Vercel** esos nombres están reservados, así que cópialos como `NEON_S3_ENDPOINT`, `NEON_S3_REGION`, `NEON_S3_ACCESS_KEY_ID` y `NEON_S3_SECRET_ACCESS_KEY`.
 
 ## Publicar en internet (Vercel + Neon, gratis)
 

@@ -20,7 +20,6 @@ export const registerSchema = z.object({
 export const profileSchema = z.object({
   displayName: z.string().trim().min(1, "El nombre es obligatorio").max(60),
   bio: z.string().trim().max(200, "La bio admite 200 caracteres"),
-  avatarUrl: z.union([z.literal(""), z.string().trim().url("URL de avatar no válida")]),
   theme: z.enum(THEME_IDS as [string, ...string[]]),
 });
 

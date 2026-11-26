@@ -17,6 +17,7 @@ model User {
   displayName  String
   bio          String   @default("")
   avatarUrl    String   @default("")
+  bannerUrl    String   @default("")
   theme        String   @default("creador")
   createdAt    DateTime @default(now())
   links        Link[]

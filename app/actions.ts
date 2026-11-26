@@ -1,11 +1,13 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { createSession, destroySession, getCurrentUser } from "@/lib/auth";
 import { getPlatform } from "@/lib/platforms";
+import { deleteObject, keyFromUrl, mediaUrl, putObject } from "@/lib/storage";
 import { linkSchema, profileSchema, registerSchema } from "@/lib/validation";
 
 const err = (path: string, msg: string) => redirect(`${path}?error=${encodeURIComponent(msg)}`);
@@ -101,6 +103,51 @@ export async function moveLink(form: FormData) {
   if (i < 0 || j < 0 || j >= links.length) redirect("/dashboard");
   [links[i], links[j]] = [links[j], links[i]];
   await db.$transaction(links.map((l, idx) => db.link.update({ where: { id: l.id }, data: { position: idx } })));
+  revalidatePath(`/${user.username}`);
+  redirect("/dashboard");
+}
+
+// ---------- Imágenes (foto de perfil y banner) ----------
+
+const IMAGE_TYPES: Record<string, string> = { "image/webp": "webp", "image/jpeg": "jpg", "image/png": "png", "image/gif": "gif" };
+const MAX_BYTES = 4 * 1024 * 1024;
+type ImageKind = "avatar" | "banner";
+const FIELD: Record<ImageKind, "avatarUrl" | "bannerUrl"> = { avatar: "avatarUrl", banner: "bannerUrl" };
+
+async function removeStored(url: string) {
+  const key = keyFromUrl(url);
+  if (key) await deleteObject(key).catch(() => {}); // si ya no existe, da igual
+}
+
+export async function uploadImage(form: FormData): Promise<{ error?: string; url?: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Tu sesión ha caducado. Vuelve a entrar." };
+  const kind = form.get("kind") as ImageKind;
+  const file = form.get("file");
+  if (!(kind in FIELD)) return { error: "Tipo de imagen no válido" };
+  if (!(file instanceof File) || file.size === 0) return { error: "No se recibió ninguna imagen" };
+  const ext = IMAGE_TYPES[file.type];
+  if (!ext) return { error: "Formato no admitido. Usa JPG, PNG, WebP o GIF." };
+  if (file.size > MAX_BYTES) return { error: "La imagen pesa demasiado (máximo 4 MB)" };
+
+  const key = `${user.id}/${kind}-${randomUUID()}.${ext}`;
+  await putObject(key, new Uint8Array(await file.arrayBuffer()), file.type);
+  const url = mediaUrl(key);
+  const old = user[FIELD[kind]];
+  await db.user.update({ where: { id: user.id }, data: { [FIELD[kind]]: url } });
+  await removeStored(old);
+  revalidatePath(`/${user.username}`);
+  revalidatePath("/dashboard");
+  return { url };
+}
+
+export async function removeImage(form: FormData) {
+  const user = await requireUser();
+  const kind = form.get("kind") as ImageKind;
+  if (!(kind in FIELD)) redirect("/dashboard");
+  const old = user[FIELD[kind]];
+  await db.user.update({ where: { id: user.id }, data: { [FIELD[kind]]: "" } });
+  await removeStored(old);
   revalidatePath(`/${user.username}`);
   redirect("/dashboard");
 }

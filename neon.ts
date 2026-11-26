@@ -3,6 +3,10 @@ import { defineConfig } from "@neon/config/v1";
 export default defineConfig({
   // Declare your Neon services here
   auth: false,
+  // Fotos de perfil y banners que suben los usuarios (privado: se sirven vía /media con caché de Vercel)
+  buckets: {
+    media: {},
+  },
   // Branch policy: per-branch tuning
   branch: (branch) => {
     if (branch.isDefault) {

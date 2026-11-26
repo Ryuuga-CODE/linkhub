@@ -17,7 +17,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (!user) return { title: "Perfil no encontrado" };
   const title = `${user.displayName} (@${user.username}) | LinkHub`;
   const description = user.bio || `Todos los enlaces de ${user.displayName} en un solo lugar.`;
-  const images = user.avatarUrl ? [{ url: user.avatarUrl }] : undefined;
+  const img = user.avatarUrl || user.bannerUrl;
+  const images = img ? [{ url: img }] : undefined;
   // Vista previa al compartir el enlace en WhatsApp, X, Discord, etc.
   return {
     title,

@@ -8,7 +8,7 @@ function onDark(hex: string) {
 }
 
 type Props = {
-  user: { username: string; displayName: string; bio: string; avatarUrl: string; theme: string };
+  user: { username: string; displayName: string; bio: string; avatarUrl: string; bannerUrl: string; theme: string };
   links: { id: string; platform: string; title: string; url: string }[];
   preview?: boolean;
 };
@@ -16,7 +16,8 @@ type Props = {
 export function ProfileView({ user, links, preview }: Props) {
   const initials = user.displayName.slice(0, 2).toUpperCase();
   return (
-    <div className={`profile theme-${user.theme}${preview ? " is-preview" : ""}`}>
+    <div className={`profile theme-${user.theme}${preview ? " is-preview" : ""}${user.bannerUrl ? " has-banner" : ""}`}>
+      {user.bannerUrl && <div className="banner" style={{ backgroundImage: `url("${user.bannerUrl}")` }} aria-hidden />}
       <div className="profile-inner">
         {user.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

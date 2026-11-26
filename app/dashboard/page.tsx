@@ -7,6 +7,7 @@ import { THEMES } from "@/lib/themes";
 import { PlatformIcon } from "@/components/PlatformIcon";
 import { ProfileView } from "@/components/ProfileView";
 import { ShareButtons } from "@/components/ShareButtons";
+import { ImageUploader } from "@/components/ImageUploader";
 import { siteUrl } from "@/lib/site";
 import QRCode from "qrcode";
 import { addLink, deleteLink, logout, moveLink, toggleLink, updateProfile } from "../actions";
@@ -45,11 +46,18 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
           </section>
 
           <section className="card">
+            <h2>Imágenes</h2>
+            <div className="stack">
+              <ImageUploader key={user.bannerUrl || "banner"} kind="banner" current={user.bannerUrl} />
+              <ImageUploader key={user.avatarUrl || "avatar"} kind="avatar" current={user.avatarUrl} />
+            </div>
+          </section>
+
+          <section className="card">
             <h2>Perfil</h2>
             <form action={updateProfile} className="stack">
               <label>Nombre visible<input name="displayName" defaultValue={user.displayName} maxLength={60} required /></label>
               <label>Bio<textarea name="bio" defaultValue={user.bio} maxLength={200} rows={2} /></label>
-              <label>URL de avatar<input name="avatarUrl" type="url" defaultValue={user.avatarUrl} placeholder="https://..." /></label>
               <fieldset>
                 <legend>Estilo visual</legend>
                 <div className="theme-picker">
