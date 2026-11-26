@@ -3,7 +3,7 @@ import { PLATFORM_MAP } from "./platforms";
 import { THEME_IDS } from "./themes";
 import { BUTTON_FILLS, BUTTON_SHAPES, FONTS } from "./customStyle";
 
-export const RESERVED = new Set(["login", "register", "dashboard", "go", "api", "admin", "logout", "_next"]);
+export const RESERVED = new Set(["login", "register", "dashboard", "go", "api", "admin", "logout", "_next", "bloqueado", "media", "static", "verify", "reset"]);
 
 export const usernameSchema = z
   .string()

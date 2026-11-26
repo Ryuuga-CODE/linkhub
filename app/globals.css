@@ -137,6 +137,18 @@ legend { font-size: .9rem; font-weight: 600; margin-bottom: .5rem; }
 .btn-danger { color: var(--danger); }
 .uploader-error { color: var(--danger); font-size: .9rem; }
 
+/* Reportes y administración */
+.report-card { width: min(520px, 100%); }
+.report-card h1 { margin: 0; font-size: 1.5rem; }
+.admin-list { list-style: none; padding: 0; margin: 1rem 0 0; display: grid; gap: .75rem; }
+.admin-list > li { border: 1px solid var(--line); border-radius: 12px; padding: .9rem; display: grid; gap: .5rem; }
+.admin-reason, .admin-details { margin: 0; }
+.admin-details { font-style: italic; }
+.admin-user { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.admin-user > a { text-decoration: none; }
+.admin-actions { display: flex; gap: .4rem; margin-left: auto; }
+.admin-actions .btn { padding: .4rem .9rem; font-size: .85rem; }
+
 /* Estadísticas */
 .stats { max-width: 1100px; margin: 0 auto; padding: 0 1.25rem; display: grid; gap: 1.25rem; }
 .stats-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
@@ -253,6 +265,8 @@ legend { font-size: .9rem; font-weight: 600; margin-bottom: .5rem; }
 .theme-gamer .product-card { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
 .custom-shape .product-card { clip-path: none; }
 .fill-outline .product-card { background: transparent; color: var(--p-btn-border); }
+
+.name .verified { display: inline-block; vertical-align: -3px; margin-left: .35rem; }
 
 /* Contenido incrustado */
 .embed { display: grid; gap: .45rem; text-align: left; }

@@ -16,7 +16,7 @@ async function load(username: string) {
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const user = await load(params.username);
-  if (!user) return { title: "Perfil no encontrado" };
+  if (!user || user.suspended) return { title: "Perfil no encontrado" };
   const title = `${user.displayName} (@${user.username}) | LinkHub`;
   const description = user.bio || `Todos los enlaces de ${user.displayName} en un solo lugar.`;
   const img = user.avatarUrl || user.bannerUrl;
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
 export default async function PublicProfile({ params }: Params) {
   const user = await load(params.username);
-  if (!user) notFound();
+  if (!user || user.suspended) notFound();
   // No contamos las visitas del propio dueño
   const viewer = await getCurrentUser();
   if (viewer?.id !== user.id) track(user.id, "view");

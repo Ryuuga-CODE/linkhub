@@ -35,8 +35,11 @@ model User {
   contactAddress  String @default("")
   contactHours    String @default("")
   createdAt    DateTime @default(now())
+  verified     Boolean  @default(false)
+  suspended    Boolean  @default(false)
   links        Link[]
   events       Event[]
+  reports      Report[]
 }
 
 model Link {
@@ -79,4 +82,24 @@ model Event {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+// Reportes de perfiles hechos por visitantes
+model Report {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason    String
+  details   String   @default("")
+  status    String   @default("open") // "open" | "resolved"
+  createdAt DateTime @default(now())
+
+  @@index([status, createdAt])
+}
+
+// Dominios bloqueados por la administración (además de la lista incorporada)
+model BlockedDomain {
+  host      String   @id
+  note      String   @default("")
+  createdAt DateTime @default(now())
 }

@@ -15,7 +15,7 @@ type Contact = { contactPhone: string; contactWhatsapp: string; contactEmail: st
 const digits = (v: string) => v.replace(/\D/g, "");
 
 type Props = {
-  user: { username: string; displayName: string; bio: string; avatarUrl: string; bannerUrl: string; theme: string } & Partial<CustomStyle> & Partial<Contact>;
+  user: { username: string; displayName: string; bio: string; avatarUrl: string; bannerUrl: string; theme: string; verified?: boolean } & Partial<CustomStyle> & Partial<Contact>;
   links: { id: string; platform: string; title: string; url: string; display?: string; highlight?: boolean; kind?: string; price?: string; thumbnailUrl?: string }[];
   preview?: boolean;
 };
@@ -44,7 +44,16 @@ export async function ProfileView({ user, links, preview }: Props) {
         ) : (
           <div className="avatar avatar-initials">{initials}</div>
         )}
-        <h1 className="name">{user.displayName}</h1>
+        <h1 className="name">
+          {user.displayName}
+          {user.verified && (
+            <svg className="verified" viewBox="0 0 24 24" width="22" height="22" role="img" aria-label="Perfil verificado">
+              <title>Perfil verificado</title>
+              <path fill="#1d9bf0" d="M22.5 12.5c0-1.58-.88-2.95-2.16-3.6.15-.44.23-.92.23-1.4 0-2.21-1.71-4-3.82-4-.47 0-.92.08-1.34.25C14.79 2.5 13.47 1.5 12 1.5s-2.79 1-3.41 2.25c-.42-.17-.87-.25-1.34-.25-2.11 0-3.82 1.79-3.82 4 0 .48.08.96.23 1.4-1.28.65-2.16 2.02-2.16 3.6 0 1.5.8 2.8 1.97 3.48-.03.17-.04.35-.04.52 0 2.21 1.71 4 3.82 4 .47 0 .92-.09 1.34-.25.62 1.25 1.94 2.25 3.41 2.25s2.79-1 3.41-2.25c.42.16.87.25 1.34.25 2.11 0 3.82-1.79 3.82-4 0-.17-.01-.35-.04-.52 1.17-.68 1.97-1.98 1.97-3.48z" />
+              <path fill="#fff" d="M10.6 16.2 6.9 12.6l1.4-1.4 2.3 2.3 5.1-5.2 1.4 1.4z" />
+            </svg>
+          )}
+        </h1>
         <p className="handle">@{user.username}</p>
         {user.bio && <p className="bio">{user.bio}</p>}
 
@@ -121,7 +130,10 @@ export async function ProfileView({ user, links, preview }: Props) {
           {buttons.length === 0 && icons.length === 0 && <li className="empty">Todavía no hay enlaces.</li>}
         </ul>
         <ContactCard user={user} preview={preview} />
-        <footer className="brandmark">Hecho con <a href="/">LinkHub</a></footer>
+        <footer className="brandmark">
+          Hecho con <a href="/">LinkHub</a>
+          {!preview && <> · <a href={`/${user.username}/reportar`} rel="nofollow">Reportar</a></>}
+        </footer>
       </div>
     </div>
   );

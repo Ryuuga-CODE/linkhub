@@ -10,6 +10,7 @@ import { getPlatform } from "@/lib/platforms";
 import { deleteObject, keyFromUrl, mediaUrl, putObject } from "@/lib/storage";
 import { clear, clientKey, hit, waitMessage } from "@/lib/rateLimit";
 import { embedPlatform } from "@/lib/embeds";
+import { REPORT_REASONS, checkUrl, isAdmin, normalizeHost } from "@/lib/moderation";
 import { contactSchema, customStyleSchema, linkOptionsSchema, linkSchema, profileSchema, registerSchema, usernameSchema } from "@/lib/validation";
 
 const err = (path: string, msg: string) => redirect(`${path}?error=${encodeURIComponent(msg)}`);
@@ -75,6 +76,8 @@ export async function addLink(form: FormData) {
   const opts = linkOptionsSchema.parse(Object.fromEntries(form));
   const emb = resolveEmbed(opts, url, platform);
   if (emb.error) return err("/dashboard", emb.error);
+  const unsafe = await checkUrl(url);
+  if (unsafe) return err("/dashboard", unsafe);
   await db.link.create({ data: { userId: user.id, title, url, position: count, ...opts, platform: emb.platform! } });
   revalidatePath(`/${user.username}`);
   redirect("/dashboard");
@@ -190,6 +193,8 @@ export async function updateLink(form: FormData) {
   const opts = linkOptionsSchema.parse(Object.fromEntries(form));
   const emb = resolveEmbed(opts, url, platform);
   if (emb.error) return err("/dashboard", emb.error);
+  const unsafe = await checkUrl(url);
+  if (unsafe) return err("/dashboard", unsafe);
   await db.link.update({ where: { id: link.id }, data: { url, title, ...opts, platform: emb.platform! } });
   revalidatePath(`/${user.username}`);
   redirect("/dashboard?ok=Enlace actualizado");
@@ -268,4 +273,61 @@ function resolveEmbed(opts: { kind: string }, url: string, platform: string) {
   if (opts.kind !== "embed") return { platform };
   const p = embedPlatform(url);
   return p ? { platform: p } : { error: "Para incrustar usa un enlace de YouTube, Spotify, Twitch o Kick" };
+}
+
+// ---------- Reportes ----------
+
+export async function reportProfile(form: FormData) {
+  const username = String(form.get("username") ?? "").toLowerCase();
+  const back = `/${username}/reportar`;
+  const target = await db.user.findUnique({ where: { username } });
+  if (!target) redirect("/");
+  const reason = String(form.get("reason") ?? "");
+  if (!REPORT_REASONS.some((r) => r.id === reason)) return err(back, "Elige un motivo");
+  const details = String(form.get("details") ?? "").trim().slice(0, 1000);
+  const wait = await hit(`report:ip:${clientKey()}`, 5, 3600);
+  if (wait) return err(back, waitMessage(wait));
+  await db.report.create({ data: { userId: target.id, reason, details } });
+  redirect(`${back}?ok=1`);
+}
+
+// ---------- Administración ----------
+
+async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!isAdmin(user)) redirect("/");
+  return user!;
+}
+
+export async function resolveReport(form: FormData) {
+  await requireAdmin();
+  await db.report.update({ where: { id: String(form.get("id")) }, data: { status: "resolved" } });
+  revalidatePath("/admin");
+  redirect("/admin");
+}
+
+export async function setUserFlag(form: FormData) {
+  await requireAdmin();
+  const flag = form.get("flag");
+  if (flag !== "verified" && flag !== "suspended") redirect("/admin");
+  const user = await db.user.update({ where: { id: String(form.get("id")) }, data: { [flag]: form.get("value") === "true" } });
+  revalidatePath(`/${user.username}`);
+  revalidatePath("/admin");
+  redirect(`/admin?q=${encodeURIComponent(String(form.get("q") ?? ""))}`);
+}
+
+export async function addBlockedDomain(form: FormData) {
+  await requireAdmin();
+  const host = normalizeHost(String(form.get("host") ?? ""));
+  if (!host || !host.includes(".")) return err("/admin", "Dominio no válido");
+  await db.blockedDomain.upsert({ where: { host }, create: { host, note: String(form.get("note") ?? "").slice(0, 200) }, update: {} });
+  revalidatePath("/admin");
+  redirect("/admin?ok=Dominio bloqueado");
+}
+
+export async function removeBlockedDomain(form: FormData) {
+  await requireAdmin();
+  await db.blockedDomain.deleteMany({ where: { host: String(form.get("host")) } });
+  revalidatePath("/admin");
+  redirect("/admin");
 }

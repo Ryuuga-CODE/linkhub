@@ -6,6 +6,7 @@ import { PLATFORMS, getPlatform } from "@/lib/platforms";
 import { THEMES } from "@/lib/themes";
 import { PlatformIcon } from "@/components/PlatformIcon";
 import { ProfileView } from "@/components/ProfileView";
+import { isAdmin } from "@/lib/moderation";
 import { ShareButtons } from "@/components/ShareButtons";
 import { ImageUploader } from "@/components/ImageUploader";
 import { StyleEditor } from "@/components/StyleEditor";
@@ -27,12 +28,14 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
       <nav className="topnav">
         <Link href="/" className="logo">🔗 LinkHub</Link>
         <div className="nav-actions">
+          {isAdmin(user) && <Link href="/admin">🛡️ Admin</Link>}
           <Link href="/dashboard/stats">📊 Estadísticas</Link>
           <Link href={`/${user.username}`} target="_blank">Ver mi página ↗</Link>
           <form action={logout}><button className="btn btn-ghost">Salir</button></form>
         </div>
       </nav>
 
+      {user.suspended && <p className="alert">Tu página está suspendida por incumplir las normas y no es visible. Si crees que es un error, contáctanos.</p>}
       {searchParams.error && <p className="alert">{searchParams.error}</p>}
       {searchParams.ok && <p className="alert alert-ok">{searchParams.ok}</p>}
 
