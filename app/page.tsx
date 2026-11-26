@@ -3,6 +3,8 @@ import { getCurrentUser } from "@/lib/auth";
 import { THEMES } from "@/lib/themes";
 import { PLATFORMS } from "@/lib/platforms";
 import { PlatformIcon } from "@/components/PlatformIcon";
+import { AdSlot } from "@/components/AdSlot";
+import { adSlotFor } from "@/lib/ads";
 
 export default async function Home({ searchParams }: { searchParams: { ok?: string } }) {
   const user = await getCurrentUser();
@@ -43,6 +45,11 @@ export default async function Home({ searchParams }: { searchParams: { ok?: stri
         </div>
       </section>
 
+      {(() => {
+        const ad = adSlotFor("home");
+        return ad ? <div className="section"><AdSlot {...ad} /></div> : null;
+      })()}
+
       <section className="section">
         <h2>{PLATFORMS.length}+ plataformas soportadas</h2>
         <div className="platform-cloud">
@@ -53,6 +60,7 @@ export default async function Home({ searchParams }: { searchParams: { ok?: stri
           ))}
         </div>
       </section>
+      <footer className="site-footer"><Link href="/privacidad">Privacidad</Link></footer>
     </main>
   );
 }

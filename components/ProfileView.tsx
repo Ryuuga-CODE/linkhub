@@ -4,6 +4,8 @@ import { fontHref, profileStyle, type CustomStyle } from "@/lib/customStyle";
 import { headers } from "next/headers";
 import { channelSlug, spotifyEmbed, youtubeVideoId } from "@/lib/embeds";
 import { liveChannels } from "@/lib/live";
+import { adSlotFor } from "@/lib/ads";
+import { AdSlot } from "./AdSlot";
 
 // Marcas con color muy oscuro (TikTok, X, GitHub...) se vuelven blancas sobre fondos oscuros
 function onDark(hex: string) {
@@ -27,6 +29,7 @@ export async function ProfileView({ user, links, preview }: Props) {
   const href = (l: { id: string; url: string }) => (preview ? l.url : `/go/${l.id}`);
   const custom = profileStyle(user);
   const font = fontHref(user.font ?? "");
+  const ad = preview ? null : adSlotFor("profile");
   // Aviso de "en directo" para enlaces de Twitch y Kick
   const live = await liveChannels(links.map((l) => ({ platform: l.platform, slug: channelSlug(l.url) })));
   const isLive = (l: { platform: string; url: string }) => live.has(`${l.platform}:${channelSlug(l.url)}`);
@@ -130,9 +133,10 @@ export async function ProfileView({ user, links, preview }: Props) {
           {buttons.length === 0 && icons.length === 0 && <li className="empty">Todavía no hay enlaces.</li>}
         </ul>
         <ContactCard user={user} preview={preview} />
+        {ad && <AdSlot {...ad} className="ad-profile" />}
         <footer className="brandmark">
           Hecho con <a href="/">LinkHub</a>
-          {!preview && <> · <a href={`/${user.username}/reportar`} rel="nofollow">Reportar</a></>}
+          {!preview && <> · <a href={`/${user.username}/reportar`} rel="nofollow">Reportar</a> · <a href="/privacidad">Privacidad</a></>}
         </footer>
       </div>
     </div>

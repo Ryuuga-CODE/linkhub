@@ -14,6 +14,7 @@ export default function RegisterPage({ searchParams }: { searchParams: { error?:
         <label>Correo<input name="email" type="email" required autoComplete="email" /></label>
         <label>Contraseña<input name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
         <button className="btn">Crear cuenta</button>
+        <p className="muted">Al crear tu cuenta aceptas nuestra <Link href="/privacidad">política de privacidad</Link>.</p>
         <p className="muted">¿Ya tienes cuenta? <Link href="/login">Entra</Link></p>
       </form>
     </main>

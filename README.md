@@ -20,6 +20,9 @@ Plataforma estilo *link-in-bio*: cada persona se registra, elige un nombre de us
 - Visitas y clics por día (7/30/90 días), porcentaje de clics, enlaces más pulsados, origen, países y dispositivos.
 - Sin IPs ni datos personales; se ignoran bots y las visitas del propio dueño.
 
+**Monetización**
+- Anuncios de Google AdSense discretos (ver más abajo) y página de privacidad.
+
 **Seguridad y moderación**
 - Límite de intentos en login, registro, reportes y recuperación de contraseña.
 - Bloqueo de sitios que registran IPs y de dominios bloqueados por admin (al guardar y al hacer clic); Google Safe Browsing opcional.
@@ -39,6 +42,21 @@ Plataforma estilo *link-in-bio*: cada persona se registra, elige un nombre de us
 | `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` | No | Aviso EN DIRECTO de Twitch ([crear app](https://dev.twitch.tv/console/apps)) |
 | `GOOGLE_SAFE_BROWSING_KEY` | No | Comprobar enlaces contra Google Safe Browsing |
 | `NEXT_PUBLIC_SITE_URL` | No | Fijar el dominio de los enlaces para compartir |
+| `ADSENSE_CLIENT` | No | ID de editor de AdSense (`ca-pub-…`). Sin él no hay anuncios |
+| `ADSENSE_SLOT_PROFILE`, `ADSENSE_SLOT_HOME` | No | IDs de los bloques de anuncio (al final de cada perfil y en el inicio) |
+| `ADSENSE_TEST=1` | No | Pide anuncios de prueba (no generan ingresos) para revisar la maqueta |
+
+## Anuncios (Google AdSense)
+
+Pensados para no molestar: solo **dos bloques manuales** (al final de cada página pública, después de los enlaces y el contacto, y uno en el inicio),
+etiquetados como «Publicidad», separados de los botones, cargados solo cuando el visitante se acerca y ocultos si Google no tiene anuncio.
+Nunca aparecen en el panel, la vista previa, login, registro, administración ni reportes. **No actives los «Anuncios automáticos»** en AdSense.
+
+1. Conecta un **dominio propio** a Vercel (AdSense no aprueba subdominios de `vercel.app`).
+2. Solicita AdSense con ese dominio; la web ya publica `/ads.txt` y `/privacidad`.
+3. En AdSense crea dos bloques de **anuncios display adaptables** y copia sus IDs.
+4. En **Privacidad y mensajes** activa el mensaje de consentimiento (RGPD) para Europa, Reino Unido y Suiza.
+5. Añade `ADSENSE_CLIENT`, `ADSENSE_SLOT_PROFILE` y `ADSENSE_SLOT_HOME` en Vercel y vuelve a desplegar.
 
 ## Cómo funciona
 
