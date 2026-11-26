@@ -27,6 +27,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
       <nav className="topnav">
         <Link href="/" className="logo">🔗 LinkHub</Link>
         <div className="nav-actions">
+          <Link href="/dashboard/stats">📊 Estadísticas</Link>
           <Link href={`/${user.username}`} target="_blank">Ver mi página ↗</Link>
           <form action={logout}><button className="btn btn-ghost">Salir</button></form>
         </div>
@@ -100,7 +101,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
           </section>
 
           <section className="card">
-            <h2>Mis enlaces <span className="muted">· {totalClicks} clics en total</span></h2>
+            <h2>Mis enlaces <span className="muted">· {totalClicks} clics en total · <Link href="/dashboard/stats">ver estadísticas</Link></span></h2>
             {links.length > 1 && <p className="muted">Arrastra ⋮⋮ para cambiar el orden.</p>}
             <SortableList className="link-admin" ids={links.map((l) => l.id)} key={links.map((l) => l.id).join()}>
               {links.map((l, i) => (

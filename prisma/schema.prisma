@@ -30,6 +30,7 @@ model User {
   font            String @default("")
   createdAt    DateTime @default(now())
   links        Link[]
+  events       Event[]
 }
 
 model Link {
@@ -47,4 +48,26 @@ model Link {
   createdAt DateTime @default(now())
 
   @@index([userId, position])
+}
+
+// Límite de intentos (login, registro…) por clave: "login:ip:<hash>", "login:email:<email>"…
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+}
+
+// Visitas a la página y clics en enlaces, para las estadísticas (sin IPs ni datos personales)
+model Event {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkId    String?
+  type      String // "view" | "click"
+  country   String   @default("")
+  device    String   @default("")
+  source    String   @default("")
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }

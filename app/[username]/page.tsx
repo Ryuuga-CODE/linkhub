@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { ProfileView } from "@/components/ProfileView";
+import { getCurrentUser } from "@/lib/auth";
+import { track } from "@/lib/track";
 
 type Params = { params: { username: string } };
 
@@ -31,5 +33,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function PublicProfile({ params }: Params) {
   const user = await load(params.username);
   if (!user) notFound();
+  // No contamos las visitas del propio dueño
+  const viewer = await getCurrentUser();
+  if (viewer?.id !== user.id) track(user.id, "view");
   return <ProfileView user={user} links={user.links} />;
 }

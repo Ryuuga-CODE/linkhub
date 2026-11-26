@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { createSession, destroySession, getCurrentUser } from "@/lib/auth";
 import { getPlatform } from "@/lib/platforms";
 import { deleteObject, keyFromUrl, mediaUrl, putObject } from "@/lib/storage";
+import { clear, clientKey, hit, waitMessage } from "@/lib/rateLimit";
 import { customStyleSchema, linkOptionsSchema, linkSchema, profileSchema, registerSchema, usernameSchema } from "@/lib/validation";
 
 const err = (path: string, msg: string) => redirect(`${path}?error=${encodeURIComponent(msg)}`);
@@ -19,6 +20,8 @@ async function requireUser() {
 }
 
 export async function register(form: FormData) {
+  const wait = await hit(`register:ip:${clientKey()}`, 10, 3600); // 10 cuentas por hora y conexión (varias personas pueden compartir IP)
+  if (wait) return err("/register", waitMessage(wait));
   const parsed = registerSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return err("/register", parsed.error.issues[0].message);
   const { email, username, password } = parsed.data;
@@ -36,8 +39,12 @@ export async function register(form: FormData) {
 export async function login(form: FormData) {
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const password = String(form.get("password") ?? "");
+  // 20 intentos por conexión y 8 por cuenta cada 15 minutos
+  const wait = Math.max(await hit(`login:ip:${clientKey()}`, 20, 900), await hit(`login:email:${email}`, 8, 900));
+  if (wait) return err("/login", waitMessage(wait));
   const user = await db.user.findUnique({ where: { email } });
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) return err("/login", "Correo o contraseña incorrectos");
+  await clear(`login:email:${email}`);
   await createSession(user.id);
   redirect("/dashboard");
 }
