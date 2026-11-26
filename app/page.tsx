@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { themeMode } from "@/lib/theme";
 import { getCurrentUser } from "@/lib/auth";
 import { THEMES } from "@/lib/themes";
 import { PLATFORMS } from "@/lib/platforms";
@@ -13,6 +15,7 @@ export default async function Home({ searchParams }: { searchParams: { ok?: stri
       <nav className="topnav">
         <Link href="/" className="logo">🔗 LinkHub</Link>
         <div className="nav-actions">
+          <ThemeToggle initial={themeMode()} />
           {user ? (
             <Link className="btn" href="/dashboard">Mi panel</Link>
           ) : (

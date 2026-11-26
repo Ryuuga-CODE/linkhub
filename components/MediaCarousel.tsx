@@ -5,7 +5,16 @@ import type { MediaItem } from "@/lib/streams";
 import { MediaPlayer } from "./MediaPlayer";
 
 /** Carrusel horizontal (deslizar en móvil, flechas en escritorio) de vídeos o clips. */
-export function MediaCarousel({ items, more }: { items: MediaItem[]; more?: { href: string; label: string } }) {
+export type MoreLink = {
+  href: string;
+  label: string; // "Ver más clips"
+  sub: string; // "en Kick"
+  color: string; // color de la marca
+  icon: React.ReactNode; // logo (renderizado en el servidor)
+  thumbs: string[]; // miniaturas para el mosaico de fondo
+};
+
+export function MediaCarousel({ items, more }: { items: MediaItem[]; more?: MoreLink }) {
   const track = useRef<HTMLUListElement>(null);
   const [edges, setEdges] = useState({ start: true, end: items.length <= 1 });
 
@@ -38,7 +47,17 @@ export function MediaCarousel({ items, more }: { items: MediaItem[]; more?: { hr
         ))}
         {more && (
           <li className="car-card car-more">
-            <a href={more.href} target="_blank" rel="noopener noreferrer">{more.label} →</a>
+            <a href={more.href} target="_blank" rel="noopener noreferrer" style={{ ["--more-brand" as string]: more.color }}>
+              <span className="more-mosaic" aria-hidden>
+                {more.thumbs.slice(0, 4).map((t, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={i} src={t} alt="" loading="lazy" />
+                ))}
+              </span>
+              <span className="more-icon" aria-hidden>{more.icon}</span>
+              <span className="more-label">{more.label} <span className="more-arrow" aria-hidden>→</span></span>
+              <span className="more-sub">{more.sub}</span>
+            </a>
           </li>
         )}
       </ul>

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { themeMode } from "@/lib/theme";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -44,7 +46,7 @@ export default async function Admin({ searchParams }: { searchParams: { q?: stri
     <main className="dash">
       <nav className="topnav">
         <Link href="/" className="logo">🔗 LinkHub · Admin</Link>
-        <div className="nav-actions"><Link href="/dashboard">Mi panel</Link></div>
+        <div className="nav-actions"><ThemeToggle initial={themeMode()} /><Link href="/dashboard">Mi panel</Link></div>
       </nav>
       <div className="stats">
         {searchParams.error && <p className="alert">{searchParams.error}</p>}

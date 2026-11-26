@@ -6,8 +6,8 @@ export type Day = { date: string; views: number; clicks: number };
 
 // Paleta validada (slots 1 y 2): visitas azul, clics naranja
 const SERIES = [
-  { key: "views", label: "Visitas", color: "#257de0" },
-  { key: "clicks", label: "Clics", color: "#f47230" },
+  { key: "views", label: "Visitas", color: "var(--series-1)" },
+  { key: "clicks", label: "Clics", color: "var(--series-2)" },
 ] as const;
 
 const W = 720, H = 240, PAD = { l: 36, r: 8, t: 12, b: 26 };
@@ -65,7 +65,7 @@ export function DailyChart({ days }: { days: Day[] }) {
                   return (
                     <path
                       key={s.key}
-                      fill={s.color}
+                      style={{ fill: s.color }}
                       opacity={hover === null || hover === i ? 1 : 0.35}
                       d={`M${x},${PAD.t + plotH} V${top + r} q0,-${r} ${r},-${r} h${barW - 2 * r} q${r},0 ${r},${r} V${PAD.t + plotH} Z`}
                     />

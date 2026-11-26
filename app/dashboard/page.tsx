@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { themeMode } from "@/lib/theme";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -32,6 +34,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
           {isAdmin(user) && <Link href="/admin">🛡️ Admin</Link>}
           <Link href="/dashboard/stats">📊 Estadísticas</Link>
           <Link href={`/${user.username}`} target="_blank">Ver mi página ↗</Link>
+          <ThemeToggle initial={themeMode()} />
           <form action={logout}><button className="btn btn-ghost">Salir</button></form>
         </div>
       </nav>

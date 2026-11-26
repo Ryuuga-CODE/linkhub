@@ -200,7 +200,7 @@ async function Embed({ link, live, preview }: { link: { platform: string; url: s
       }));
       return (
         <div className="embed embed-wide">{title}
-          <MediaCarousel items={items} more={yt.channelUrl ? { href: yt.channelUrl, label: "Ver todo el canal" } : undefined} />
+          <MediaCarousel items={items} more={yt.channelUrl ? moreLink("youtube", yt.channelUrl, "Ver todo el canal", items) : undefined} />
         </div>
       );
     }
@@ -237,8 +237,13 @@ async function Embed({ link, live, preview }: { link: { platform: string; url: s
           )}
           {off.clips.length > 0 && (
             <section className="offline-block">
-              <p className="offline-label">🎬 <strong>Clips destacados</strong></p>
-              <MediaCarousel items={off.clips} more={{ href: `${channel}/clips`, label: "Ver más clips" }} />
+              <p className="offline-label">
+                🎬 <strong>Clips destacados</strong>
+                <a className="see-all" href={`${channel}/clips`} target="_blank" rel="noopener noreferrer" style={{ ["--more-brand" as string]: `#${getPlatform(link.platform).color}` }}>
+                  Ver todos →
+                </a>
+              </p>
+              <MediaCarousel items={off.clips} more={moreLink(link.platform, `${channel}/clips`, "Ver más clips", off.clips)} />
             </section>
           )}
         </div>
@@ -269,4 +274,17 @@ async function Embed({ link, live, preview }: { link: { platform: string; url: s
       <span className="link-title">{link.title}</span>
     </a>
   );
+}
+
+/** Tarjeta final del carrusel ("Ver más clips en Kick"), con el color y el logo de la plataforma. */
+function moreLink(platform: string, href: string, label: string, items: MediaItem[]) {
+  const p = getPlatform(platform);
+  return {
+    href,
+    label,
+    sub: `en ${p.name}`,
+    color: `#${p.color}`,
+    icon: <PlatformIcon platform={platform} size={26} />,
+    thumbs: items.slice(-4).map((i) => i.thumb).filter(Boolean),
+  };
 }
