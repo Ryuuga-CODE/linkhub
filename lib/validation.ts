@@ -37,7 +37,7 @@ export const linkSchema = z.object({
 export const linkOptionsSchema = z.object({
   display: z.enum(["button", "icon"]).catch("button"),
   highlight: z.preprocess((v) => v === "on", z.boolean()),
-  kind: z.enum(["link", "product"]).catch("link"),
+  kind: z.enum(["link", "product", "embed"]).catch("link"),
   price: z.string().trim().max(30, "El precio admite 30 caracteres").catch(""),
 });
 

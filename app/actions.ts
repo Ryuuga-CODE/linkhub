@@ -9,6 +9,7 @@ import { createSession, destroySession, getCurrentUser } from "@/lib/auth";
 import { getPlatform } from "@/lib/platforms";
 import { deleteObject, keyFromUrl, mediaUrl, putObject } from "@/lib/storage";
 import { clear, clientKey, hit, waitMessage } from "@/lib/rateLimit";
+import { embedPlatform } from "@/lib/embeds";
 import { contactSchema, customStyleSchema, linkOptionsSchema, linkSchema, profileSchema, registerSchema, usernameSchema } from "@/lib/validation";
 
 const err = (path: string, msg: string) => redirect(`${path}?error=${encodeURIComponent(msg)}`);
@@ -72,7 +73,9 @@ export async function addLink(form: FormData) {
   const count = await db.link.count({ where: { userId: user.id } });
   if (count >= 50) return err("/dashboard", "Máximo 50 enlaces por perfil");
   const opts = linkOptionsSchema.parse(Object.fromEntries(form));
-  await db.link.create({ data: { userId: user.id, platform, title, url, position: count, ...opts } });
+  const emb = resolveEmbed(opts, url, platform);
+  if (emb.error) return err("/dashboard", emb.error);
+  await db.link.create({ data: { userId: user.id, title, url, position: count, ...opts, platform: emb.platform! } });
   revalidatePath(`/${user.username}`);
   redirect("/dashboard");
 }
@@ -185,7 +188,9 @@ export async function updateLink(form: FormData) {
   const { platform, url } = parsed.data;
   const title = parsed.data.title || getPlatform(platform).name;
   const opts = linkOptionsSchema.parse(Object.fromEntries(form));
-  await db.link.update({ where: { id: link.id }, data: { platform, url, title, ...opts } });
+  const emb = resolveEmbed(opts, url, platform);
+  if (emb.error) return err("/dashboard", emb.error);
+  await db.link.update({ where: { id: link.id }, data: { url, title, ...opts, platform: emb.platform! } });
   revalidatePath(`/${user.username}`);
   redirect("/dashboard?ok=Enlace actualizado");
 }
@@ -256,4 +261,11 @@ export async function updateContact(form: FormData) {
   await db.user.update({ where: { id: user.id }, data: parsed.data });
   revalidatePath(`/${user.username}`);
   redirect("/dashboard?ok=Contacto guardado#contacto");
+}
+
+/** Para "contenido incrustado", la plataforma sale de la URL. Devuelve error si no se admite. */
+function resolveEmbed(opts: { kind: string }, url: string, platform: string) {
+  if (opts.kind !== "embed") return { platform };
+  const p = embedPlatform(url);
+  return p ? { platform: p } : { error: "Para incrustar usa un enlace de YouTube, Spotify, Twitch o Kick" };
 }

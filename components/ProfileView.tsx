@@ -1,6 +1,9 @@
 import { PlatformIcon } from "./PlatformIcon";
 import { getPlatform } from "@/lib/platforms";
 import { fontHref, profileStyle, type CustomStyle } from "@/lib/customStyle";
+import { headers } from "next/headers";
+import { channelSlug, spotifyEmbed, youtubeVideoId } from "@/lib/embeds";
+import { liveChannels } from "@/lib/live";
 
 // Marcas con color muy oscuro (TikTok, X, GitHub...) se vuelven blancas sobre fondos oscuros
 function onDark(hex: string) {
@@ -17,13 +20,16 @@ type Props = {
   preview?: boolean;
 };
 
-export function ProfileView({ user, links, preview }: Props) {
+export async function ProfileView({ user, links, preview }: Props) {
   const initials = user.displayName.slice(0, 2).toUpperCase();
   const icons = links.filter((l) => l.display === "icon");
   const buttons = links.filter((l) => l.display !== "icon");
   const href = (l: { id: string; url: string }) => (preview ? l.url : `/go/${l.id}`);
   const custom = profileStyle(user);
   const font = fontHref(user.font ?? "");
+  // Aviso de "en directo" para enlaces de Twitch y Kick
+  const live = await liveChannels(links.map((l) => ({ platform: l.platform, slug: channelSlug(l.url) })));
+  const isLive = (l: { platform: string; url: string }) => live.has(`${l.platform}:${channelSlug(l.url)}`);
   return (
     <div
       className={`profile theme-${user.theme}${preview ? " is-preview" : ""}${user.bannerUrl ? " has-banner" : ""} ${custom.className}`}
@@ -49,7 +55,7 @@ export function ProfileView({ user, links, preview }: Props) {
               return (
                 <li key={l.id}>
                   <a
-                    className={`social-icon${l.highlight ? " is-highlight" : ""}`}
+                    className={`social-icon${l.highlight ? " is-highlight" : ""}${isLive(l) ? " is-live" : ""}`}
                     href={href(l)}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -69,6 +75,13 @@ export function ProfileView({ user, links, preview }: Props) {
           {buttons.map((l) => {
             const p = getPlatform(l.platform);
             const style = { ["--brand" as string]: `#${p.color}`, ["--brand-on-dark" as string]: onDark(p.color) };
+            if (l.kind === "embed") {
+              return (
+                <li key={l.id}>
+                  <Embed link={l} live={isLive(l)} />
+                </li>
+              );
+            }
             if (l.kind === "product") {
               return (
                 <li key={l.id}>
@@ -100,6 +113,7 @@ export function ProfileView({ user, links, preview }: Props) {
                     )}
                   </span>
                   <span className="link-title">{l.title}</span>
+                  {isLive(l) && <span className="live-badge">EN DIRECTO</span>}
                 </a>
               </li>
             );
@@ -137,5 +151,54 @@ function ContactCard({ user, preview }: { user: Partial<Contact> & { username: s
       {hours && <p className="contact-line">🕒 {hours}</p>}
       <a className="contact-save" href={preview ? undefined : `/${user.username}/contacto.vcf`}>👤 Guardar contacto</a>
     </section>
+  );
+}
+
+/** Reproductor incrustado; si no se puede, cae a un botón normal. */
+async function Embed({ link, live }: { link: { platform: string; url: string; title: string }; live: boolean }) {
+  const title = (
+    <p className="embed-title">
+      <PlatformIcon platform={link.platform} size={16} /> {link.title}
+      {live && <span className="live-badge">EN DIRECTO</span>}
+    </p>
+  );
+  if (link.platform === "youtube") {
+    const id = await youtubeVideoId(link.url);
+    if (id) return (
+      <div className="embed">{title}
+        <iframe className="embed-video" src={`https://www.youtube-nocookie.com/embed/${id}`} title={link.title} loading="lazy"
+          allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowFullScreen />
+      </div>
+    );
+  }
+  if (link.platform === "spotify") {
+    const sp = spotifyEmbed(link.url);
+    if (sp) return (
+      <div className="embed">{title}
+        <iframe className="embed-audio" src={sp.src} height={sp.height} title={link.title} loading="lazy" allow="encrypted-media; clipboard-write; fullscreen" />
+      </div>
+    );
+  }
+  const slug = channelSlug(link.url);
+  if (link.platform === "twitch" && slug) {
+    const host = (headers().get("x-forwarded-host") ?? headers().get("host") ?? "localhost").split(":")[0];
+    return (
+      <div className="embed">{title}
+        <iframe className="embed-video" src={`https://player.twitch.tv/?channel=${slug}&parent=${host}&muted=true&autoplay=false`} title={link.title} loading="lazy" allowFullScreen />
+      </div>
+    );
+  }
+  if (link.platform === "kick" && slug) {
+    return (
+      <div className="embed">{title}
+        <iframe className="embed-video" src={`https://player.kick.com/${slug}?muted=true&autoplay=false`} title={link.title} loading="lazy" allowFullScreen />
+      </div>
+    );
+  }
+  return (
+    <a className="link-btn" href={link.url} target="_blank" rel="noopener noreferrer">
+      <span className="link-icon"><PlatformIcon platform={link.platform} /></span>
+      <span className="link-title">{link.title}</span>
+    </a>
   );
 }

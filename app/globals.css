@@ -254,6 +254,24 @@ legend { font-size: .9rem; font-weight: 600; margin-bottom: .5rem; }
 .custom-shape .product-card { clip-path: none; }
 .fill-outline .product-card { background: transparent; color: var(--p-btn-border); }
 
+/* Contenido incrustado */
+.embed { display: grid; gap: .45rem; text-align: left; }
+.embed-title { margin: 0; font-weight: 700; font-size: .95rem; display: flex; gap: .4rem; align-items: center; }
+.embed iframe { width: 100%; border: 0; border-radius: min(var(--p-btn-radius), 16px); background: rgba(0,0,0,.35); box-shadow: var(--p-btn-shadow); }
+.embed-video { aspect-ratio: 16 / 9; height: auto; }
+
+/* En directo */
+.live-badge {
+  display: inline-flex; align-items: center; gap: .3rem; flex: none; margin-left: auto;
+  background: #e5212e; color: #fff; font-size: .68rem; font-weight: 800; letter-spacing: .04em;
+  padding: .2rem .5rem; border-radius: 999px; font-family: system-ui, sans-serif;
+}
+.live-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #fff; animation: lh-blink 1.2s ease-in-out infinite; }
+.link-btn .live-badge { position: absolute; right: .8rem; top: 50%; transform: translateY(-50%); }
+.link-btn { position: relative; }
+.social-icon.is-live { box-shadow: 0 0 0 3px #e5212e; }
+@keyframes lh-blink { 50% { opacity: .25; } }
+
 /* Contacto */
 .contact-card { margin: 0 0 2rem; padding: 1rem; border-radius: 18px; background: var(--p-btn-bg); color: var(--p-btn-fg); border: 2px solid var(--p-btn-border); display: grid; gap: .6rem; }
 .contact-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: .5rem; }

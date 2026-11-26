@@ -116,6 +116,7 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
                         {l.display === "icon" && <span className="tag">icono</span>}
                         {l.highlight && <span className="tag tag-hot">destacado</span>}
                         {l.kind === "product" && <span className="tag tag-shop">producto{l.price ? ` · ${l.price}` : ""}</span>}
+                        {l.kind === "embed" && <span className="tag">incrustado</span>}
                       </strong>
                       <a href={l.url} target="_blank" rel="noopener noreferrer">{l.url}</a>
                     </div>
@@ -207,6 +208,7 @@ function KindFields({ kind = "link", price = "" }: { kind?: string; price?: stri
     <div className="kind-fields">
       <label className="check"><input type="radio" name="kind" value="link" defaultChecked={kind !== "product"} /> 🔗 Enlace</label>
       <label className="check"><input type="radio" name="kind" value="product" defaultChecked={kind === "product"} /> 🛍️ Producto (con foto y precio)</label>
+      <label className="check"><input type="radio" name="kind" value="embed" defaultChecked={kind === "embed"} /> ▶️ Incrustar (último vídeo de YouTube, Spotify, Twitch o Kick)</label>
       <input className="price-field" name="price" defaultValue={price} placeholder="Precio, ej. $299 MXN" maxLength={30} aria-label="Precio" />
     </div>
   );
