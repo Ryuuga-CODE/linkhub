@@ -11,8 +11,9 @@ function secret() {
   return new TextEncoder().encode(s);
 }
 
-export async function createSession(userId: string) {
-  const token = await new SignJWT({ sub: userId })
+export async function createSession(userId: string, sessionVersion = 0) {
+  // "sv" permite cerrar todas las sesiones subiendo User.sessionVersion
+  const token = await new SignJWT({ sub: userId, sv: sessionVersion })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${MAX_AGE}s`)
@@ -36,7 +37,9 @@ export async function getCurrentUser() {
   try {
     const { payload } = await jwtVerify(token, secret());
     if (!payload.sub) return null;
-    return db.user.findUnique({ where: { id: payload.sub } });
+    const user = await db.user.findUnique({ where: { id: payload.sub } });
+    if (!user || (payload.sv ?? 0) !== user.sessionVersion) return null;
+    return user;
   } catch {
     return null;
   }

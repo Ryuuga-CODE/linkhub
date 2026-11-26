@@ -4,13 +4,41 @@ Plataforma estilo *link-in-bio*: cada persona se registra, elige un nombre de us
 
 ## Funcionalidades
 
-- **Registro e inicio de sesión** con correo y contraseña (bcrypt + sesión JWT en cookie `httpOnly`).
-- **Página pública** en `/<usuario>` con avatar, nombre, bio y botones de enlaces.
-- **6 estilos visuales**: 🎮 Gamer · 💼 Empresa · 🛍️ Tienda · ✨ Creador · ◻️ Minimal · 🌿 Naturaleza.
-- **26 plataformas** con su icono y color de marca (vía [simple-icons](https://simpleicons.org)): TikTok, YouTube, Twitch, Kick, Instagram, X, Threads, Facebook, Discord, Steam, Spotify, Amazon, Mercado Libre, Shopify, Etsy, PayPal, Patreon, Ko-fi, LinkedIn, WhatsApp, Telegram, Pinterest, Snapchat, GitHub, sitio web y correo.
-- **Foto de perfil y banner** subidos desde el dispositivo; el banner se desvanece hacia abajo sobre el fondo del tema.
-- **Panel** para editar perfil, añadir/ocultar/eliminar/reordenar enlaces, con vista previa en vivo tipo móvil.
-- **Contador de clics** por enlace (los botones públicos pasan por `/go/<id>`).
+**Perfil y enlaces**
+- Registro e inicio de sesión (bcrypt + sesión JWT en cookie `httpOnly`), cambiar usuario y contraseña, borrar cuenta.
+- Página pública en `/<usuario>` con foto redonda, banner que se desvanece, bio e insignia de verificado.
+- Enlaces editables, reordenables arrastrando (ratón o dedo), ocultables y destacables con animación.
+- Fila de iconos sociales, miniatura por enlace y 26 plataformas con su icono y color.
+- **Productos** con foto, precio y botón Comprar; **contacto** con llamar, WhatsApp, correo, mapa, horario y vCard.
+- **Incrustados**: último vídeo de un canal de YouTube, Spotify, Twitch y Kick, con aviso EN DIRECTO.
+
+**Personalización**
+- 6 temas (Gamer, Empresa, Tienda, Creador, Minimal, Naturaleza) y, encima, colores propios, degradado de fondo,
+  forma y estilo de botones y 9 tipografías, con vista previa instantánea.
+
+**Estadísticas**
+- Visitas y clics por día (7/30/90 días), porcentaje de clics, enlaces más pulsados, origen, países y dispositivos.
+- Sin IPs ni datos personales; se ignoran bots y las visitas del propio dueño.
+
+**Seguridad y moderación**
+- Límite de intentos en login, registro, reportes y recuperación de contraseña.
+- Bloqueo de sitios que registran IPs y de dominios bloqueados por admin (al guardar y al hacer clic); Google Safe Browsing opcional.
+- Botón Reportar en cada perfil y panel `/admin` para revisar reportes, verificar y suspender perfiles.
+- Verificación de correo y recuperación de contraseña por email (Resend); cambiar la contraseña cierra las demás sesiones.
+
+## Variables de entorno
+
+| Variable | Obligatoria | Para qué |
+|---|---|---|
+| `DATABASE_URL`, `DATABASE_URL_UNPOOLED` | Sí | Postgres de Neon (pooled / directa) |
+| `AUTH_SECRET` | Sí | Firma de sesiones (`openssl rand -base64 32`) |
+| `NEON_S3_ENDPOINT`, `NEON_S3_REGION`, `NEON_S3_ACCESS_KEY_ID`, `NEON_S3_SECRET_ACCESS_KEY` | Sí (imágenes) | Neon Object Storage. En local valen las `AWS_*` que escribe `neon deploy` |
+| `ADMIN_EMAILS` | No | Correos (separados por comas) con acceso a `/admin` |
+| `RESEND_API_KEY`, `EMAIL_FROM` | No | Envío de correos con [Resend](https://resend.com). Sin ellas, la verificación y la recuperación se ocultan |
+| `EMAIL_TRANSPORT=console` | No | Solo desarrollo: imprime los correos en la consola |
+| `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` | No | Aviso EN DIRECTO de Twitch ([crear app](https://dev.twitch.tv/console/apps)) |
+| `GOOGLE_SAFE_BROWSING_KEY` | No | Comprobar enlaces contra Google Safe Browsing |
+| `NEXT_PUBLIC_SITE_URL` | No | Fijar el dominio de los enlaces para compartir |
 
 ## Cómo funciona
 

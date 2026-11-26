@@ -11,9 +11,11 @@ import { deleteObject, keyFromUrl, mediaUrl, putObject } from "@/lib/storage";
 import { clear, clientKey, hit, waitMessage } from "@/lib/rateLimit";
 import { embedPlatform } from "@/lib/embeds";
 import { REPORT_REASONS, checkUrl, isAdmin, normalizeHost } from "@/lib/moderation";
+import { createToken, emailEnabled, sendResetEmail, sendVerifyEmail, useToken } from "@/lib/email";
+import { siteUrl } from "@/lib/site";
 import { contactSchema, customStyleSchema, linkOptionsSchema, linkSchema, profileSchema, registerSchema, usernameSchema } from "@/lib/validation";
 
-const err = (path: string, msg: string) => redirect(`${path}?error=${encodeURIComponent(msg)}`);
+const err = (path: string, msg: string) => redirect(`${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(msg)}`);
 
 async function requireUser() {
   const user = await getCurrentUser();
@@ -34,7 +36,11 @@ export async function register(form: FormData) {
   const user = await db.user.create({
     data: { email, username, displayName: username, passwordHash: await bcrypt.hash(password, 10) },
   });
-  await createSession(user.id);
+  await createSession(user.id, user.sessionVersion);
+  if (emailEnabled()) {
+    const token = await createToken(user.id, "verify");
+    await sendVerifyEmail(email, `${siteUrl()}/verify?token=${token}`).catch(() => false);
+  }
   redirect("/dashboard");
 }
 
@@ -47,7 +53,7 @@ export async function login(form: FormData) {
   const user = await db.user.findUnique({ where: { email } });
   if (!user || !(await bcrypt.compare(password, user.passwordHash))) return err("/login", "Correo o contraseña incorrectos");
   await clear(`login:email:${email}`);
-  await createSession(user.id);
+  await createSession(user.id, user.sessionVersion);
   redirect("/dashboard");
 }
 
@@ -330,4 +336,62 @@ export async function removeBlockedDomain(form: FormData) {
   await db.blockedDomain.deleteMany({ where: { host: String(form.get("host")) } });
   revalidatePath("/admin");
   redirect("/admin");
+}
+
+// ---------- Correo y contraseña ----------
+
+export async function resendVerification() {
+  const user = await requireUser();
+  if (!emailEnabled() || user.emailVerified) redirect("/dashboard");
+  const wait = await hit(`verify:user:${user.id}`, 3, 3600);
+  if (wait) return err("/dashboard", waitMessage(wait));
+  const token = await createToken(user.id, "verify");
+  const ok = await sendVerifyEmail(user.email, `${siteUrl()}/verify?token=${token}`);
+  if (!ok) return err("/dashboard", "No se pudo enviar el correo. Inténtalo más tarde.");
+  redirect(`/dashboard?ok=${encodeURIComponent(`Te enviamos un enlace a ${user.email}`)}`);
+}
+
+export async function requestReset(form: FormData) {
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const wait = Math.max(await hit(`reset:ip:${clientKey()}`, 5, 900), await hit(`reset:email:${email}`, 3, 3600));
+  if (wait) return err("/reset", waitMessage(wait));
+  const user = await db.user.findUnique({ where: { email } });
+  if (user && emailEnabled()) {
+    const token = await createToken(user.id, "reset");
+    await sendResetEmail(email, `${siteUrl()}/reset?token=${token}`).catch(() => false);
+  }
+  // Siempre el mismo mensaje: no revelamos qué correos están registrados
+  redirect("/reset?sent=1");
+}
+
+export async function resetPassword(form: FormData) {
+  const token = String(form.get("token") ?? "");
+  const password = String(form.get("password") ?? "");
+  const back = `/reset?token=${encodeURIComponent(token)}`;
+  if (password.length < 8) return err(back, "La contraseña debe tener al menos 8 caracteres");
+  if (password !== form.get("confirm")) return err(back, "Las contraseñas no coinciden");
+  const user = await useToken(token, "reset");
+  if (!user) return err("/reset", "El enlace no es válido o ha caducado. Pide uno nuevo.");
+  // Cambia la contraseña, confirma el correo (lo ha demostrado) y cierra las demás sesiones
+  const updated = await db.user.update({
+    where: { id: user.id },
+    data: { passwordHash: await bcrypt.hash(password, 10), sessionVersion: { increment: 1 }, emailVerified: user.emailVerified ?? new Date() },
+  });
+  await clear(`login:email:${user.email}`);
+  await createSession(updated.id, updated.sessionVersion);
+  redirect("/dashboard?ok=Contraseña cambiada");
+}
+
+export async function changePassword(form: FormData) {
+  const user = await requireUser();
+  const current = String(form.get("current") ?? "");
+  const password = String(form.get("password") ?? "");
+  if (!(await bcrypt.compare(current, user.passwordHash))) return err("/dashboard", "La contraseña actual no es correcta");
+  if (password.length < 8) return err("/dashboard", "La contraseña nueva debe tener al menos 8 caracteres");
+  const updated = await db.user.update({
+    where: { id: user.id },
+    data: { passwordHash: await bcrypt.hash(password, 10), sessionVersion: { increment: 1 } },
+  });
+  await createSession(updated.id, updated.sessionVersion); // esta sesión sigue; las demás se cierran
+  redirect("/dashboard?ok=Contraseña cambiada. Se cerró la sesión en otros dispositivos.");
 }

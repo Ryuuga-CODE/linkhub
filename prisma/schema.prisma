@@ -35,11 +35,14 @@ model User {
   contactAddress  String @default("")
   contactHours    String @default("")
   createdAt    DateTime @default(now())
+  emailVerified  DateTime?
+  sessionVersion Int      @default(0) // subirlo cierra todas las sesiones
   verified     Boolean  @default(false)
   suspended    Boolean  @default(false)
   links        Link[]
   events       Event[]
   reports      Report[]
+  tokens       Token[]
 }
 
 model Link {
@@ -102,4 +105,18 @@ model BlockedDomain {
   host      String   @id
   note      String   @default("")
   createdAt DateTime @default(now())
+}
+
+// Enlaces de un solo uso enviados por correo (verificar correo, restablecer contraseña)
+model Token {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // "verify" | "reset"
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, type])
 }

@@ -24,6 +24,11 @@ legend { font-size: .9rem; font-weight: 600; margin-bottom: .5rem; }
 .stack { display: grid; gap: 1rem; }
 .alert { background: #fef3f2; color: var(--danger); border: 1px solid #fecdca; padding: .6rem .9rem; border-radius: 10px; }
 .alert-ok { background: #ecfdf3; color: var(--ok); border-color: #abefc6; }
+.alert-info { background: #eff8ff; color: #175cd3; border-color: #b2ddff; display: flex; gap: .75rem; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.alert-info .btn { padding: .35rem .9rem; font-size: .85rem; }
+.sub-zone { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+.sub-zone summary { cursor: pointer; font-weight: 600; }
+.sub-zone form { margin-top: .75rem; max-width: 420px; }
 
 .topnav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem; max-width: 1200px; margin: 0 auto; gap: 1rem; }
 .logo { font-weight: 800; font-size: 1.2rem; text-decoration: none; }

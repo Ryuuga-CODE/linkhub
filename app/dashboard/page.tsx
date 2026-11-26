@@ -7,13 +7,14 @@ import { THEMES } from "@/lib/themes";
 import { PlatformIcon } from "@/components/PlatformIcon";
 import { ProfileView } from "@/components/ProfileView";
 import { isAdmin } from "@/lib/moderation";
+import { emailEnabled } from "@/lib/email";
 import { ShareButtons } from "@/components/ShareButtons";
 import { ImageUploader } from "@/components/ImageUploader";
 import { StyleEditor } from "@/components/StyleEditor";
 import { SortableList } from "@/components/SortableList";
 import { siteUrl } from "@/lib/site";
 import QRCode from "qrcode";
-import { addLink, changeUsername, deleteAccount, updateContact, deleteLink, logout, moveLink, toggleLink, updateLink, updateProfile } from "../actions";
+import { addLink, changePassword, changeUsername, deleteAccount, resendVerification, updateContact, deleteLink, logout, moveLink, toggleLink, updateLink, updateProfile } from "../actions";
 
 export default async function Dashboard({ searchParams }: { searchParams: { error?: string; ok?: string } }) {
   const user = await getCurrentUser();
@@ -36,6 +37,12 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
       </nav>
 
       {user.suspended && <p className="alert">Tu página está suspendida por incumplir las normas y no es visible. Si crees que es un error, contáctanos.</p>}
+      {emailEnabled() && !user.emailVerified && (
+        <form action={resendVerification} className="alert alert-info">
+          <span>📧 Confirma tu correo <strong>{user.email}</strong> para poder recuperar tu cuenta si olvidas la contraseña.</span>
+          <button className="btn btn-ghost">Reenviar enlace</button>
+        </form>
+      )}
       {searchParams.error && <p className="alert">{searchParams.error}</p>}
       {searchParams.ok && <p className="alert alert-ok">{searchParams.ok}</p>}
 
@@ -174,6 +181,16 @@ export default async function Dashboard({ searchParams }: { searchParams: { erro
               <button className="btn btn-ghost">Cambiar</button>
             </form>
             <p className="muted">Si lo cambias, tu enlace anterior dejará de funcionar: actualízalo en tus redes.</p>
+
+            <details className="sub-zone">
+              <summary>Cambiar contraseña</summary>
+              <form action={changePassword} className="stack">
+                <label>Contraseña actual<input name="current" type="password" required autoComplete="current-password" /></label>
+                <label>Contraseña nueva<input name="password" type="password" required minLength={8} autoComplete="new-password" /></label>
+                <button className="btn btn-ghost">Cambiar contraseña</button>
+                <p className="muted">Se cerrará la sesión en tus otros dispositivos.</p>
+              </form>
+            </details>
 
             <details className="danger-zone">
               <summary>Borrar mi cuenta</summary>
